@@ -147,8 +147,8 @@ describe('updates', () => {
   });
   it('pulls for a digest, edits the tag otherwise', () => {
     expect(updateInfo(upd('homecloud-homeassistant-1', 'stable', 'sha256:2193')).steps).toEqual([
-      'sudo docker compose pull homeassistant', 'sudo docker compose up -d homeassistant']);
-    expect(updateInfo(upd('homecloud-monitor-1', '27-cli', '29-cli')).steps).toEqual(['sudo docker compose up -d monitor']);
+      'sudo /usr/local/bin/docker compose pull homeassistant', 'sudo /usr/local/bin/docker compose up -d homeassistant']);
+    expect(updateInfo(upd('homecloud-monitor-1', '27-cli', '29-cli')).steps).toEqual(['sudo /usr/local/bin/docker compose up -d monitor']);
     const dsm: Entity = { entity_id: 'update.nas_dsm_update', state: 'on', last_changed: '',
       attributes: { friendly_name: 'NAS DSM update', installed_version: 'DSM 7.2.2', latest_version: 'DSM 7.2.2 Update 1' } };
     expect(updateInfo(dsm)).toMatchObject({ container: false, steps: [] });
