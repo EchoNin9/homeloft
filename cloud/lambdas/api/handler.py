@@ -279,7 +279,7 @@ def put_prefs(event, home, claims):
         raise ApiError(400, "bad_request", "prefs must be an object")
     now = hl.now_ms()
     # ponytail: stored as a JSON string so the server never parses it; optional KMS encryption
-    # (docs/first-deploy.md) wraps this one string.
+    # (docs/quickstart.md) wraps this one string.
     hl.put_item(_table(), {**_prefs_key(home, claims), "prefs": json.dumps(prefs, separators=(",", ":")), "updated_ts": now})
     return 200, {"updatedTs": now}
 

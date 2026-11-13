@@ -1,4 +1,4 @@
-# Plug homeloft into a stack that already owns a Cognito pool.
+# Plug Homeloft into a stack that already owns a Cognito pool.
 # Shaped after an existing app stack (its infra/main.tf): it exposes outputs
 # `cognitoUserPoolId` and `cognitoClientId`, and uses the groups admin / manager / user.
 terraform {

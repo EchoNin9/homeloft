@@ -398,7 +398,7 @@ export function HomeloftDashboard({ client, homeId: pinnedHome, pollMs = 5000, o
               </select>
             </>
           ) : (
-            <h1 className="hl-title">{selected ?? (loading ? 'homeloft' : 'No home')}</h1>
+            <h1 className="hl-title">{selected ?? (loading ? 'Homeloft' : 'No home')}</h1>
           )}
           {home && (
             <span

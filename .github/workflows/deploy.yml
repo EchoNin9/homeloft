@@ -5,7 +5,7 @@ name: deploy
 # job prints only change counts, so a public repo's Actions logs don't map your AWS resources.
 # Needs repo variables AWS_DEPLOY_ROLE_ARN (bootstrap output deploy_role_arn) and
 # TOFU_STATE_BUCKET. The stack's gitignored files (terraform.tfvars, backend.hcl) are
-# read from s3://$TOFU_STATE_BUCKET/homeloft/local-files/ (see docs/first-deploy.md).
+# read from s3://$TOFU_STATE_BUCKET/homeloft/local-files/ (see docs/quickstart.md).
 on:
   push:
     branches: [main]

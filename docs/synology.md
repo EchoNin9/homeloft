@@ -23,7 +23,7 @@ Copy the contents of the repo's `nas/` directory (compose file, `bridge/`, `mosq
 ## 2. Cloud credentials
 
 Recommended: generate `private.key` on the NAS and send only a CSR to the cloud, as in
-[first-deploy.md](first-deploy.md) steps 2 and 4. Otherwise the cloud module outputs, per home, `cert.pem`, `private.key` and the IoT endpoint, plus
+[quickstart.md](quickstart.md) steps 2 and 4. Otherwise the cloud module outputs, per home, `cert.pem`, `private.key` and the IoT endpoint, plus
 `AmazonRootCA1.pem` (from <https://www.amazontrust.com/repository/AmazonRootCA1.pem>). Place them in
 `/volume1/docker/homeloft/bridge/certs/`:
 
@@ -53,7 +53,7 @@ only, so it is reachable from HA (host network) and Zigbee2MQTT but not from the
 
 1. Copy `.env.example` to `.env` next to `docker-compose.yml` and fill it in (`HOME_ID`, `IOT_ENDPOINT`,
    `IOT_THING_NAME`, `DATA_ROOT`, `TZ`). `TZ` is an IANA name (e.g. `America/Vancouver`). Keep it
-   consistent with `history_utc_offset_hours` in the cloud tfvars (docs/first-deploy.md step 0). Leave `HA_TOKEN` for step 5.
+   consistent with `history_utc_offset_hours` in the cloud tfvars (docs/quickstart.md step 0). Leave `HA_TOKEN` for step 5.
 2. Container Manager -> **Project** -> **Create**. Name `homeloft`, path
    `/volume1/docker/homeloft/stack`, source **Use existing docker-compose.yml**. Container Manager
    picks up the `.env` in the same folder. Don't start the project yet (or accept that `bridge` will

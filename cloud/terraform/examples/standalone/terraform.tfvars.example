@@ -3,15 +3,15 @@ region   = "us-east-1"
 home_ids = ["home"]
 
 # Recommended: the private key is generated on the NAS and never leaves it.
-# See docs/first-deploy.md step 2.
+# See docs/quickstart.md step 2.
 device_csr_files = {
   home = "./certs/home.csr"
 }
 
 # SET THIS: your home's UTC offset in whole hours (e.g. -7 for Vancouver, 1 for Paris in winter).
-# Daily history summaries split at this local midnight. A fixed offset with no DST; see docs/first-deploy.md step 0.
+# Daily history summaries split at this local midnight. A fixed offset with no DST; see docs/quickstart.md step 0.
 history_utc_offset_hours = 0
 
-# Optional custom domain for the web app (docs/first-deploy.md step 10).
+# Optional custom domain for the web app (docs/quickstart.md step 10).
 # web_domain      = "homeloft.example.com"
 # route53_zone_id = "Z0123456789ABC" # only if Route 53 hosts the DNS; leave unset for ClouDNS etc.

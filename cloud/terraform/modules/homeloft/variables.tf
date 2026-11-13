@@ -88,7 +88,7 @@ variable "create_web_hosting" {
 }
 
 variable "web_domain" {
-  description = "Optional custom domain for the web app, e.g. homeloft.example.com (a subdomain is easiest). Creates an ACM certificate and adds the URL to Cognito and API CORS. Needs the stack in us-east-1 (CloudFront certificates live there). See docs/first-deploy.md \"Custom domain\"."
+  description = "Optional custom domain for the web app, e.g. homeloft.example.com (a subdomain is easiest). Creates an ACM certificate and adds the URL to Cognito and API CORS. Needs the stack in us-east-1 (CloudFront certificates live there). See docs/quickstart.md \"Custom domain\"."
   type        = string
   default     = null
 
