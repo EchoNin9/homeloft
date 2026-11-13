@@ -29,8 +29,8 @@ export interface Auth {
   logout(): void;
 }
 
-const TOKENS_KEY = 'homecloud.tokens';
-const PKCE_KEY = 'homecloud.pkce';
+const TOKENS_KEY = 'homeloft.tokens';
+const PKCE_KEY = 'homeloft.pkce';
 const REFRESH_SKEW_MS = 60_000;
 
 export class AuthError extends Error {

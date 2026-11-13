@@ -3,7 +3,7 @@ import json
 import pytest
 
 from conftest import NOW, cmd
-from homecloud_bridge.commands import SEEN_LIMIT
+from homeloft_bridge.commands import SEEN_LIMIT
 
 
 def run(val, **over):

@@ -17,7 +17,7 @@ variable "region" {
 }
 
 variable "bucket_name" {
-  description = "State bucket name. Null = \"homecloud-tfstate-{account_id}-{region}\"."
+  description = "State bucket name. Null = \"homeloft-tfstate-{account_id}-{region}\"."
   type        = string
   default     = null
 }
@@ -35,7 +35,7 @@ provider "aws" {
 data "aws_caller_identity" "me" {}
 
 locals {
-  bucket = coalesce(var.bucket_name, "homecloud-tfstate-${data.aws_caller_identity.me.account_id}-${var.region}")
+  bucket = coalesce(var.bucket_name, "homeloft-tfstate-${data.aws_caller_identity.me.account_id}-${var.region}")
 }
 
 resource "aws_s3_bucket" "state" {
@@ -129,7 +129,7 @@ output "backend_hcl" {
   description = "Paste into cloud/terraform/examples/<example>/backend.hcl (set key per stack)."
   value       = <<-EOT
     bucket       = "${aws_s3_bucket.state.bucket}"
-    key          = "homecloud/standalone.tfstate"
+    key          = "homeloft/standalone.tfstate"
     region       = "${var.region}"
     encrypt      = true
     use_lockfile = true

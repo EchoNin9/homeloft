@@ -1,5 +1,5 @@
-# homecloud NAS stack. Copy .env.example to .env and edit before `docker compose up -d`.
-name: homecloud
+# homeloft NAS stack. Copy .env.example to .env and edit before `docker compose up -d`.
+name: homeloft
 
 services:
   homeassistant:
@@ -39,7 +39,7 @@ services:
 
   bridge:
     build: ./bridge
-    image: homecloud-bridge:0.1.0
+    image: homeloft-bridge:0.1.0
     labels: [wud.watch=false]   # built locally from this repo; nothing to check
     network_mode: host   # reaches Home Assistant at 127.0.0.1:8123
     environment:

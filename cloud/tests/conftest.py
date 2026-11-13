@@ -10,7 +10,7 @@ from moto import mock_aws
 LAMBDAS = pathlib.Path(__file__).resolve().parents[1] / "lambdas"
 sys.path.insert(0, str(LAMBDAS / "common"))
 
-TABLE = "homecloud-state"
+TABLE = "homeloft-state"
 ALLOWED = "light.turn_on,light.turn_off,switch.turn_on,switch.turn_off,scene.turn_on,climate.set_temperature"
 
 
@@ -25,7 +25,7 @@ def _load(name, rel):
 def env(monkeypatch):
     for k, v in {
         "AWS_DEFAULT_REGION": "us-east-1", "AWS_ACCESS_KEY_ID": "x", "AWS_SECRET_ACCESS_KEY": "x",
-        "TABLE_NAME": TABLE, "HOME_IDS": "home1,home2", "THING_PREFIX": "homecloud",
+        "TABLE_NAME": TABLE, "HOME_IDS": "home1,home2", "THING_PREFIX": "homeloft",
         "ALLOWED_GROUPS": "admin", "ALLOWED_SERVICES": ALLOWED,
         "IOT_ENDPOINT": "example-ats.iot.us-east-1.amazonaws.com", "API_VERSION": "9.9.9",
         "PREFS_HMAC_KEY": "test-key",
@@ -86,7 +86,7 @@ def api_event(method, path, groups="[admin]", body=None, query=None, sub="user-1
 
 def iot_event(home, kind, payload, sub=None, client=None):
     ev = dict(payload)
-    ev.update(homeId=home, kind=kind, clientId=client or f"homecloud-{home}")
+    ev.update(homeId=home, kind=kind, clientId=client or f"homeloft-{home}")
     if sub:
         ev["sub"] = sub
     return ev

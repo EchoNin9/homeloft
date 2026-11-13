@@ -1,2 +1,2 @@
-export { HomeCloudDashboard } from './HomeCloudDashboard';
-export type { HomeCloudDashboardProps } from './HomeCloudDashboard';
+export { HomeloftDashboard } from './HomeloftDashboard';
+export type { HomeloftDashboardProps } from './HomeloftDashboard';

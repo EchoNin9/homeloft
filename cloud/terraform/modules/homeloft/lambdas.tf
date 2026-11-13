@@ -1,5 +1,5 @@
 # Packaging: archive_file `source` blocks assemble each zip from the lambda's own
-# handler.py plus the shared hc_common.py. No build step, no pip, deterministic.
+# handler.py plus the shared hl_common.py. No build step, no pip, deterministic.
 locals {
   lambdas_dir = "${path.module}/../../../lambdas"
 }
@@ -12,8 +12,8 @@ data "archive_file" "ingest" {
     content  = file("${local.lambdas_dir}/ingest/handler.py")
   }
   source {
-    filename = "hc_common.py"
-    content  = file("${local.lambdas_dir}/common/hc_common.py")
+    filename = "hl_common.py"
+    content  = file("${local.lambdas_dir}/common/hl_common.py")
   }
 }
 
@@ -25,8 +25,8 @@ data "archive_file" "api" {
     content  = file("${local.lambdas_dir}/api/handler.py")
   }
   source {
-    filename = "hc_common.py"
-    content  = file("${local.lambdas_dir}/common/hc_common.py")
+    filename = "hl_common.py"
+    content  = file("${local.lambdas_dir}/common/hl_common.py")
   }
 }
 
@@ -124,7 +124,7 @@ resource "aws_iam_role_policy" "api" {
         # cmd topics only; the API can never publish to state/status/ack.
         Effect   = "Allow"
         Action   = "iot:Publish"
-        Resource = [for h in var.home_ids : "arn:${local.partition}:iot:${local.region}:${local.account_id}:topic/homecloud/${h}/cmd"]
+        Resource = [for h in var.home_ids : "arn:${local.partition}:iot:${local.region}:${local.account_id}:topic/homeloft/${h}/cmd"]
       },
       {
         Effect   = "Allow"

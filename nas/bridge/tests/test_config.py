@@ -1,6 +1,6 @@
 import pytest
 
-from homecloud_bridge.config import ConfigError, load
+from homeloft_bridge.config import ConfigError, load
 
 
 @pytest.fixture
@@ -8,7 +8,7 @@ def env(tmp_path):
     for n in ("cert.pem", "private.key", "AmazonRootCA1.pem"):
         (tmp_path / n).write_text("x")
     return {"HOME_ID": "my-home", "HA_TOKEN": "s3cr3t-token", "IOT_ENDPOINT": "abc-ats.iot.eu-west-1.amazonaws.com",
-            "IOT_THING_NAME": "homecloud-my-home", "BRIDGE_CERT_DIR": str(tmp_path)}
+            "IOT_THING_NAME": "homeloft-my-home", "BRIDGE_CERT_DIR": str(tmp_path)}
 
 
 def test_defaults(env):

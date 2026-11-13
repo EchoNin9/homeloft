@@ -7,8 +7,8 @@ data "archive_file" "rollup" {
     content  = file("${local.lambdas_dir}/rollup/handler.py")
   }
   source {
-    filename = "hc_common.py"
-    content  = file("${local.lambdas_dir}/common/hc_common.py")
+    filename = "hl_common.py"
+    content  = file("${local.lambdas_dir}/common/hl_common.py")
   }
 }
 

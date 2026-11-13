@@ -10,7 +10,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY homecloud_bridge ./homecloud_bridge
+COPY homeloft_bridge ./homeloft_bridge
 
 USER bridge
-CMD ["python", "-m", "homecloud_bridge"]
+CMD ["python", "-m", "homeloft_bridge"]

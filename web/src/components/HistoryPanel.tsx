@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
-import type { Entity, History, HomeCloudClient } from '../client';
+import type { Entity, History, HomeloftClient } from '../client';
 import { DAY_MS as DAY, RANGES, historyModel, isActive, type Model, type Range } from './history';
 import { domainOf, errorMessage, friendlyName } from './util';
 
@@ -29,7 +29,7 @@ const fmtTime = (t: number, long: boolean) =>
 const fmtNum = (v: number) => (Math.abs(v) >= 100 ? v.toFixed(0) : String(Math.round(v * 10) / 10));
 
 interface Props {
-  client: HomeCloudClient;
+  client: HomeloftClient;
   homeId: string;
   entity: Entity;
 }
@@ -57,20 +57,20 @@ export function HistoryPanel({ client, homeId, entity }: Props) {
   const name = friendlyName(entity);
 
   return (
-    <section className="hc-history" data-tone={AMBER.has(domainOf(entity.entity_id)) ? 'on' : undefined} aria-labelledby="hc-hist-title">
-      <div className="hc-history-head">
-        <h3 id="hc-hist-title">History</h3>
-        <div className="hc-seg" role="group" aria-label="Range">
+    <section className="hl-history" data-tone={AMBER.has(domainOf(entity.entity_id)) ? 'on' : undefined} aria-labelledby="hl-hist-title">
+      <div className="hl-history-head">
+        <h3 id="hl-hist-title">History</h3>
+        <div className="hl-seg" role="group" aria-label="Range">
           {(Object.keys(RANGES) as Range[]).map((r) => (
             <button key={r} type="button" aria-pressed={r === range} onClick={() => setRange(r)}>{RANGES[r].label}</button>
           ))}
         </div>
       </div>
-      <div className="hc-chart-wrap" aria-busy={loading || undefined}>
-        {err ? <p className="hc-muted">Couldn't load history: {err}</p>
-          : loading ? <p className="hc-muted">Loading…</p>
+      <div className="hl-chart-wrap" aria-busy={loading || undefined}>
+        {err ? <p className="hl-muted">Couldn't load history: {err}</p>
+          : loading ? <p className="hl-muted">Loading…</p>
           : model && model.kind !== 'empty' ? <Chart model={model} unit={unit} long={RANGES[range].res === 'day'} name={name} />
-          : <p className="hc-muted">{RANGES[range].res === 'day'
+          : <p className="hl-muted">{RANGES[range].res === 'day'
               ? 'No daily summaries yet. They are built nightly, just after midnight, from recorded changes, so the first appears the day after history starts.'
               : 'No history yet. Changes are recorded from when history was first deployed; this entity hasn\'t changed since.'}</p>}
       </div>
@@ -102,34 +102,34 @@ function Chart({ model, unit, long, name }: { model: Exclude<Model, { kind: 'emp
 
   return (
     <>
-      <div className="hc-chart" ref={wrap}>
+      <div className="hl-chart" ref={wrap}>
         <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${name} history chart`} onPointerMove={onMove} onPointerLeave={() => setHover(null)}>
           {model.kind !== 'timeline' && [lo, (lo + hi) / 2, hi].map((v) => (
             <g key={v}>
-              <line x1={padL} x2={W - PAD.r} y1={y(v)} y2={y(v)} className="hc-gridline" />
-              <text x={padL - 6} y={y(v) + 4} textAnchor="end" className="hc-axis">{fmtNum(v)}{model.kind === 'bars' ? ' h' : v === hi && unit ? ` ${unit}` : ''}</text>
+              <line x1={padL} x2={W - PAD.r} y1={y(v)} y2={y(v)} className="hl-gridline" />
+              <text x={padL - 6} y={y(v) + 4} textAnchor="end" className="hl-axis">{fmtNum(v)}{model.kind === 'bars' ? ' h' : v === hi && unit ? ` ${unit}` : ''}</text>
             </g>
           ))}
           {noData && (
             <g>
-              <rect x={x(x0)} width={x(dataFrom) - x(x0)} y={PAD.t} height={PH} className="hc-nodata" />
-              {x(dataFrom) - x(x0) > 90 && <text x={(x(x0) + x(dataFrom)) / 2} y={PAD.t + PH / 2 + 4} textAnchor="middle" className="hc-axis">No data yet</text>}
+              <rect x={x(x0)} width={x(dataFrom) - x(x0)} y={PAD.t} height={PH} className="hl-nodata" />
+              {x(dataFrom) - x(x0) > 90 && <text x={(x(x0) + x(dataFrom)) / 2} y={PAD.t + PH / 2 + 4} textAnchor="middle" className="hl-axis">No data yet</text>}
             </g>
           )}
-          <text x={padL} y={H - 6} className="hc-axis">{fmtTime(daily ? model.days[0]!.t : x0, long)}</text>
-          <text x={W - PAD.r} y={H - 6} textAnchor="end" className="hc-axis">{fmtTime(daily ? model.days[model.days.length - 1]!.t : x1, long)}</text>
+          <text x={padL} y={H - 6} className="hl-axis">{fmtTime(daily ? model.days[0]!.t : x0, long)}</text>
+          <text x={W - PAD.r} y={H - 6} textAnchor="end" className="hl-axis">{fmtTime(daily ? model.days[model.days.length - 1]!.t : x1, long)}</text>
 
           {model.kind === 'line' && (
-            <path className="hc-line" d={model.pts.map((p, i) => (i ? `H${x(p.t)}V${y(p.v)}` : `M${x(p.t)},${y(p.v)}`)).join('') + `H${x(model.to)}`} />
+            <path className="hl-line" d={model.pts.map((p, i) => (i ? `H${x(p.t)}V${y(p.v)}` : `M${x(p.t)},${y(p.v)}`)).join('') + `H${x(model.to)}`} />
           )}
           {model.kind === 'timeline' && model.segs.map((s, i) => (
             <rect key={i} x={x(s.a)} width={Math.max(1, x(s.b) - x(s.a) - 1)} y={PAD.t + PH / 4} height={PH / 2} rx={2}
-              className={isActive(s.state) ? 'hc-seg-on' : 'hc-seg-off'} />
+              className={isActive(s.state) ? 'hl-seg-on' : 'hl-seg-off'} />
           ))}
           {model.kind === 'band' && (
             <>
-              <path className="hc-band" d={`M${model.days.map((d) => `${x(d.t)},${y(d.max)}`).join('L')}L${[...model.days].reverse().map((d) => `${x(d.t)},${y(d.min)}`).join('L')}Z`} />
-              <path className="hc-line" d={`M${model.days.map((d) => `${x(d.t)},${y(d.avg)}`).join('L')}`} />
+              <path className="hl-band" d={`M${model.days.map((d) => `${x(d.t)},${y(d.max)}`).join('L')}L${[...model.days].reverse().map((d) => `${x(d.t)},${y(d.min)}`).join('L')}Z`} />
+              <path className="hl-line" d={`M${model.days.map((d) => `${x(d.t)},${y(d.avg)}`).join('L')}`} />
             </>
           )}
           {model.kind === 'bars' && model.days.map((d) => {
@@ -137,20 +137,20 @@ function Chart({ model, unit, long, name }: { model: Exclude<Model, { kind: 'emp
             const top = y(d.hours);
             const r = Math.min(4, bw / 2, y(0) - top);
             const l = x(d.t) - bw / 2;
-            return <path key={d.date} className="hc-bar" d={`M${l},${y(0)}V${top + r}Q${l},${top} ${l + r},${top}H${l + bw - r}Q${l + bw},${top} ${l + bw},${top + r}V${y(0)}Z`} />;
+            return <path key={d.date} className="hl-bar" d={`M${l},${y(0)}V${top + r}Q${l},${top} ${l + r},${top}H${l + bw - r}Q${l + bw},${top} ${l + bw},${top + r}V${y(0)}Z`} />;
           })}
-          {hover !== null && hover >= x0 && hover <= x1 && <line className="hc-crosshair" x1={x(hover)} x2={x(hover)} y1={PAD.t} y2={PAD.t + PH} />}
+          {hover !== null && hover >= x0 && hover <= x1 && <line className="hl-crosshair" x1={x(hover)} x2={x(hover)} y1={PAD.t} y2={PAD.t + PH} />}
         </svg>
         {tip && hover !== null && hover >= x0 && hover <= x1 && (
-          <div className="hc-tip" style={{ left: `${(x(hover) / W) * 100}%` }}>{tip}</div>
+          <div className="hl-tip" style={{ left: `${(x(hover) / W) * 100}%` }}>{tip}</div>
         )}
       </div>
       {model.kind === 'timeline' && (
-        <p className="hc-legend"><span className="hc-swatch hc-seg-on" /> {model.active ?? 'on'} <span className="hc-swatch hc-seg-off" /> other</p>
+        <p className="hl-legend"><span className="hl-swatch hl-seg-on" /> {model.active ?? 'on'} <span className="hl-swatch hl-seg-off" /> other</p>
       )}
-      {model.kind === 'band' && <p className="hc-legend"><span className="hc-swatch hc-line-sw" /> daily average · shaded: min–max</p>}
-      {model.kind === 'bars' && <p className="hc-legend">Hours per day {model.state.replace(/_/g, ' ')}</p>}
-      <details className="hc-table">
+      {model.kind === 'band' && <p className="hl-legend"><span className="hl-swatch hl-line-sw" /> daily average · shaded: min–max</p>}
+      {model.kind === 'bars' && <p className="hl-legend">Hours per day {model.state.replace(/_/g, ' ')}</p>}
+      <details className="hl-table">
         <summary>Table</summary>
         <table>
           <tbody>{rows(model, unit).map(([a, b], i) => <tr key={i}><td>{a}</td><td>{b}</td></tr>)}</tbody>

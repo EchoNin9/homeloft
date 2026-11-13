@@ -92,7 +92,7 @@ export interface WaitForCommandOptions {
   intervalMs?: number;
 }
 
-export interface HomeCloudClientOptions {
+export interface HomeloftClientOptions {
   /** API base URL without the `/v1` suffix, e.g. https://xyz.execute-api.us-east-1.amazonaws.com */
   apiUrl: string;
   /** Returns a Cognito JWT. Called before every authenticated request. */

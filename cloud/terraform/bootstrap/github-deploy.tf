@@ -21,7 +21,7 @@ variable "deploy_branch" {
 variable "deploy_prefix" {
   description = "The module's name_prefix. The role may only manage IAM/S3/DynamoDB resources starting with it."
   type        = string
-  default     = "homecloud"
+  default     = "homeloft"
 }
 
 locals {

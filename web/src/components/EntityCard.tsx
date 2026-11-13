@@ -46,7 +46,7 @@ export const hasColorTemp = (e: Entity) => domainOf(e.entity_id) === 'light' && 
 /** Icon props that tint an on light with its current colour (HA does the same). */
 export function lightTint(e: Entity): { 'data-tinted'?: true; style?: React.CSSProperties } {
   const rgb = domainOf(e.entity_id) === 'light' && e.state === 'on' ? rgbOf(e.attributes) : undefined;
-  return rgb ? { 'data-tinted': true, style: { '--hc-light': toHex(rgb) } as React.CSSProperties } : {};
+  return rgb ? { 'data-tinted': true, style: { '--hl-light': toHex(rgb) } as React.CSSProperties } : {};
 }
 
 /** Debounced value commit: returns [draft, setDraft]; calls commit(draft) `delay` ms after the last change. */
@@ -69,8 +69,8 @@ function useDraft<T>(commit: (v: T) => void, delay = 400) {
 
 export function Switch({ checked, label, disabled, onChange }: { checked: boolean; label: string; disabled: boolean; onChange: (next: boolean) => void }) {
   return (
-    <button type="button" role="switch" aria-checked={checked} aria-label={label} className="hc-switch" disabled={disabled} onClick={() => onChange(!checked)}>
-      <span className="hc-switch-knob" aria-hidden="true" />
+    <button type="button" role="switch" aria-checked={checked} aria-label={label} className="hl-switch" disabled={disabled} onClick={() => onChange(!checked)}>
+      <span className="hl-switch-knob" aria-hidden="true" />
     </button>
   );
 }
@@ -89,8 +89,8 @@ export function Brightness({ entity, disabled, onAction }: { entity: Entity; dis
   return (
     <input
       type="range"
-      className="hc-range"
-      style={{ '--hc-fill': `${shown}%` } as React.CSSProperties}
+      className="hl-range"
+      style={{ '--hl-fill': `${shown}%` } as React.CSSProperties}
       min={1}
       max={100}
       value={Math.max(1, shown)}
@@ -111,7 +111,7 @@ export function LightColor({ entity, disabled, onAction }: { entity: Entity; dis
   return (
     <input
       type="color"
-      className="hc-color"
+      className="hl-color"
       value={draft ?? toHex(rgbOf(entity.attributes) ?? [255, 255, 255])}
       disabled={disabled}
       aria-label={`${friendlyName(entity)} colour`}
@@ -138,8 +138,8 @@ export function ColorTemp({ entity, disabled, onAction }: { entity: Entity; disa
   return (
     <input
       type="range"
-      className="hc-range hc-range-temp"
-      style={{ '--hc-warm': toHex(kelvinToRgb(min)), '--hc-cool': toHex(kelvinToRgb(max)) } as React.CSSProperties}
+      className="hl-range hl-range-temp"
+      style={{ '--hl-warm': toHex(kelvinToRgb(min)), '--hl-cool': toHex(kelvinToRgb(max)) } as React.CSSProperties}
       min={min}
       max={max}
       step={50}
@@ -172,10 +172,10 @@ export function Climate({ entity, disabled, onAction }: { entity: Entity; disabl
     setDraft(next);
   };
   return (
-    <div className="hc-stepper" role="group" aria-label={`${friendlyName(entity)} target temperature`}>
-      <button type="button" className="hc-btn hc-step" aria-label="Decrease target temperature" disabled={disabled || shown === undefined} onClick={() => bump(-1)}>−</button>
-      <output className="hc-temp" aria-live="polite">{shown === undefined ? '—' : `${shown} ${unit}`}</output>
-      <button type="button" className="hc-btn hc-step" aria-label="Increase target temperature" disabled={disabled || shown === undefined} onClick={() => bump(1)}>+</button>
+    <div className="hl-stepper" role="group" aria-label={`${friendlyName(entity)} target temperature`}>
+      <button type="button" className="hl-btn hl-step" aria-label="Decrease target temperature" disabled={disabled || shown === undefined} onClick={() => bump(-1)}>−</button>
+      <output className="hl-temp" aria-live="polite">{shown === undefined ? '—' : `${shown} ${unit}`}</output>
+      <button type="button" className="hl-btn hl-step" aria-label="Increase target temperature" disabled={disabled || shown === undefined} onClick={() => bump(1)}>+</button>
     </div>
   );
 }
@@ -209,14 +209,14 @@ export function EntityCard({ entity, disabled, busy, onAction, onOpen, hidden, s
   const tone = iconTone(entity);
   const d = domainOf(entity.entity_id);
   const icon = (
-    <span className="hc-tile-icon" data-tone={tone || undefined} data-busy={busy || undefined} {...lightTint(entity)}>
+    <span className="hl-tile-icon" data-tone={tone || undefined} data-busy={busy || undefined} {...lightTint(entity)}>
       <Icon path={entityIcon(entity)} />
     </span>
   );
   return (
     <li
-      id={`hc-e-${entity.entity_id}`}
-      className="hc-tile"
+      id={`hl-e-${entity.entity_id}`}
+      className="hl-tile"
       data-tone={tone || undefined}
       data-hidden={hidden || undefined}
       data-selected={selected || undefined}
@@ -224,11 +224,11 @@ export function EntityCard({ entity, disabled, busy, onAction, onOpen, hidden, s
       data-arranging={arranging || undefined}
       {...li}
     >
-      <div className="hc-tile-main">
+      <div className="hl-tile-main">
         {act ? (
           <button
             type="button"
-            className="hc-tile-act"
+            className="hl-tile-act"
             {...(act.patch ? { role: 'switch', 'aria-checked': entity.state === 'on' || (d === 'cover' && entity.state !== 'closed') } : {})}
             aria-label={act.patch ? `${name}` : `Activate ${name}`}
             aria-describedby={nameId}
@@ -240,17 +240,17 @@ export function EntityCard({ entity, disabled, busy, onAction, onOpen, hidden, s
         ) : (
           icon
         )}
-        <button type="button" className="hc-tile-info" aria-haspopup={quiet ? undefined : 'dialog'} aria-pressed={selecting ? !!selected : undefined} onClick={selecting ? onSelect : arranging ? undefined : onOpen}>
-          <span className="hc-tile-name" title={name}>{name}</span>
-          <span className="hc-tile-state" id={nameId}>{stateText(entity)}</span>
+        <button type="button" className="hl-tile-info" aria-haspopup={quiet ? undefined : 'dialog'} aria-pressed={selecting ? !!selected : undefined} onClick={selecting ? onSelect : arranging ? undefined : onOpen}>
+          <span className="hl-tile-name" title={name}>{name}</span>
+          <span className="hl-tile-state" id={nameId}>{stateText(entity)}</span>
         </button>
-        {selecting && <span className="hc-tile-check" aria-hidden="true">{selected ? '✓' : ''}</span>}
+        {selecting && <span className="hl-tile-check" aria-hidden="true">{selected ? '✓' : ''}</span>}
       </div>
       {!quiet && hasBrightness(entity) && (
-        <div className="hc-tile-feature"><Brightness entity={entity} disabled={disabled} onAction={onAction} /></div>
+        <div className="hl-tile-feature"><Brightness entity={entity} disabled={disabled} onAction={onAction} /></div>
       )}
       {!quiet && d === 'climate' && (
-        <div className="hc-tile-feature"><Climate entity={entity} disabled={disabled} onAction={onAction} /></div>
+        <div className="hl-tile-feature"><Climate entity={entity} disabled={disabled} onAction={onAction} /></div>
       )}
       {children}
     </li>
