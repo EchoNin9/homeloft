@@ -17,6 +17,17 @@ export function Icon({ path, label, size = 24 }: { path: string; label?: string;
   );
 }
 
+/** The Homeloft mark: a gabled house with a loft window and a bird heading out (outbound-only messages).
+ *  Same drawing as cloud/terraform/modules/homeloft/branding/*.svg. */
+export function HomeloftMark({ size = 24 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} className="hl-icon" aria-hidden="true">
+      <path d="M12 3.6L20.4 10.6V21H14.2V15.6H9.8V21H3.6V10.6Z M12 8.6a1.7 1.7 0 1 0 0.001 0Z" fill="currentColor" fillRule="evenodd" />
+      <path d="M16.1 2.9q1.4 0.1 2.5 1.6q1.1-1.5 2.5-1.6" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /** HA `icon` attribute values we can draw; anything else falls back to the domain icon. */
 const NAMED: Record<string, string> = { 'mdi:docker': mdiDocker, 'mdi:flash': mdiFlash, 'mdi:thermometer': mdiThermometer };
 

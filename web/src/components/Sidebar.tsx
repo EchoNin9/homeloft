@@ -1,9 +1,9 @@
 import {
-  mdiBookmarkOutline, mdiBookmarkPlusOutline, mdiClose, mdiDeleteOutline, mdiFolderOutline, mdiHistory, mdiHomeOutline, mdiHomeVariant,
+  mdiBookmarkOutline, mdiBookmarkPlusOutline, mdiClose, mdiDeleteOutline, mdiFolderOutline, mdiHistory, mdiHomeOutline,
   mdiLogout, mdiMenu, mdiPackageUp, mdiPencil, mdiShape,
 } from '@mdi/js';
 import { useEffect, useRef, useState } from 'react';
-import { Icon } from './icons';
+import { HomeloftMark, Icon } from './icons';
 import { MAX_QUERIES, type ViewPrefs } from './util';
 
 export const VIEWS: Array<{ key: string; label: string; icon: string; group: ViewPrefs['group']; sort: ViewPrefs['sort'] }> = [
@@ -75,7 +75,7 @@ export function Sidebar(p: Props) {
           <button type="button" className="hl-icon-btn hl-side-close" aria-label="Close navigation" onClick={p.onClose}>
             <Icon path={mdiClose} />
           </button>
-          <span className="hl-side-brand"><span className="hl-side-logo" aria-hidden="true"><Icon path={mdiHomeVariant} size={18} /></span>Homeloft</span>
+          <span className="hl-side-brand"><span className="hl-side-logo" aria-hidden="true"><HomeloftMark size={18} /></span>Homeloft</span>
         </div>
 
         <nav className="hl-side-scroll" aria-label="Views">
