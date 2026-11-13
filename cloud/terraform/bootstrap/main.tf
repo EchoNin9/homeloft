@@ -1,6 +1,6 @@
 # One-time bootstrap: the S3 bucket that holds OpenTofu state for every other stack.
 # It starts on local state. After the first apply, follow the "migrate" step in
-# docs/first-deploy.md to move this stack's own state into the bucket it created.
+# docs/quickstart.md to move this stack's own state into the bucket it created.
 terraform {
   required_version = ">= 1.10" # S3 native locking (use_lockfile)
   required_providers {

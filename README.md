@@ -26,7 +26,7 @@ The full message and API contract is in [docs/contract.md](docs/contract.md).
 
 ## Quick start
 
-**First time? Follow [docs/first-deploy.md](docs/first-deploy.md)**, which has a smoke test at every step.
+**First time? Follow [docs/quickstart.md](docs/quickstart.md)**, which has a smoke test at every step.
 
 1. **Cloud:** bootstrap the S3 state bucket (`cloud/terraform/bootstrap`), then `tofu init -backend-config=backend.hcl && tofu apply`
    in `cloud/terraform/examples/standalone`.

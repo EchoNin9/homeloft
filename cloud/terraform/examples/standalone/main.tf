@@ -30,7 +30,7 @@ variable "device_csrs" {
 }
 
 variable "device_csr_files" {
-  description = "Optional homeId => path to a CSR file (recommended; see docs/first-deploy.md). Merged over device_csrs."
+  description = "Optional homeId => path to a CSR file (recommended; see docs/quickstart.md). Merged over device_csrs."
   type        = map(string)
   default     = {}
 }
@@ -42,7 +42,7 @@ variable "history_utc_offset_hours" {
 }
 
 variable "web_domain" {
-  description = "Optional custom domain for the web app, e.g. homeloft.example.com. See docs/first-deploy.md \"Custom domain\"."
+  description = "Optional custom domain for the web app, e.g. homeloft.example.com. See docs/quickstart.md \"Custom domain\"."
   type        = string
   default     = null
 }

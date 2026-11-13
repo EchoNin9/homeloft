@@ -1,4 +1,4 @@
-# CLAUDE.md / AGENTS.md — homeloft
+# CLAUDE.md / AGENTS.md — Homeloft
 
 These instructions are for every coding agent working in this repo (Claude Code, Antigravity,
 Codex and others). `AGENTS.md` is a symlink to this file.
@@ -48,7 +48,7 @@ and the HTTP API. Change it **first**, in the same PR as the code. The three par
   locking). Keep the module Terraform-compatible: no OpenTofu-only syntax in
   `cloud/terraform/modules/`. The folder is still named `terraform/`, since both tools read `.tf`.
 - Never commit `backend.hcl`, `*.tfvars`, state, `certs/` or `*_override.tf`.
-- The deploy runbook is `docs/first-deploy.md`. Update it whenever outputs, inputs or setup steps change.
+- The deploy runbook is `docs/quickstart.md`. Update it whenever outputs, inputs or setup steps change.
 
 ## Gotchas
 

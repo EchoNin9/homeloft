@@ -11,7 +11,7 @@ Three ways to use it, from most to least integrated.
 Creates everything: a Cognito pool, a public client (code + PKCE) and a hosted UI domain, plus
 the API, IoT resources, and S3 + CloudFront for the SPA. State goes in S3 (see below).
 
-**Follow [first-deploy.md](first-deploy.md).** It covers the state bucket, CSR, apply,
+**Follow [quickstart.md](quickstart.md).** It covers the state bucket, CSR, apply,
 certificates, your login, the NAS and the web upload, with a smoke test after each step.
 
 The SPA is published with `./scripts/deploy-web.sh`. The bucket's `config.json` (`apiUrl`,

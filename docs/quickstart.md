@@ -1,4 +1,4 @@
-# First deploy checklist (to milestone M1)
+# Quickstart: first deploy (to milestone M1)
 
 Goal: the web UI on CloudFront signs in, shows your real Home Assistant entities, and toggles a
 real device. Every phase ends with a **smoke test**. Don't move on until it passes; the table at

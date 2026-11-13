@@ -1,4 +1,4 @@
-"""Shared helpers for the homeloft Lambdas (copied into both zips by Terraform).
+"""Shared helpers for the Homeloft Lambdas (copied into both zips by Terraform).
 
 Everything that writes to DynamoDB goes through put_item / put_items / update_item
 below. Those are the single choke point that converts floats to Decimal(str(v)),
