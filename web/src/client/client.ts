@@ -1,4 +1,4 @@
-import { HomeCloudError } from './errors';
+import { HomeloftError } from './errors';
 import type {
   CommandAccepted,
   CommandRequest,
@@ -7,7 +7,7 @@ import type {
   EntityList,
   Health,
   Home,
-  HomeCloudClientOptions,
+  HomeloftClientOptions,
   ListEntitiesOptions,
   WaitForCommandOptions,
   History,
@@ -17,12 +17,12 @@ import type {
 
 const enc = encodeURIComponent;
 
-export class HomeCloudClient {
+export class HomeloftClient {
   private readonly base: string;
   private readonly getToken: () => Promise<string>;
   private readonly fetchImpl: typeof fetch;
 
-  constructor(opts: HomeCloudClientOptions) {
+  constructor(opts: HomeloftClientOptions) {
     this.base = opts.apiUrl.replace(/\/+$/, '');
     this.getToken = opts.getToken;
     this.fetchImpl = opts.fetch ?? ((...a) => globalThis.fetch(...a));
@@ -74,7 +74,7 @@ export class HomeCloudClient {
   /**
    * Polls until the command leaves `pending`. Resolves with the final status
    * (`ok` or `error`; inspect `.status`/`.error`). Rejects with
-   * HomeCloudError(code "timeout") if still pending after timeoutMs.
+   * HomeloftError(code "timeout") if still pending after timeoutMs.
    */
   async waitForCommand(
     homeId: string,
@@ -87,7 +87,7 @@ export class HomeCloudClient {
       if (s.status === 'ok' || s.status === 'error') return s;
       const remaining = deadline - Date.now();
       if (remaining <= 0) {
-        throw new HomeCloudError(0, 'timeout', `command ${id} still pending after ${timeoutMs}ms`);
+        throw new HomeloftError(0, 'timeout', `command ${id} still pending after ${timeoutMs}ms`);
       }
       await new Promise((r) => setTimeout(r, Math.min(intervalMs, remaining)));
     }
@@ -111,7 +111,7 @@ export class HomeCloudClient {
         body: body === undefined ? undefined : JSON.stringify(body),
       });
     } catch (e) {
-      throw new HomeCloudError(0, 'network_error', e instanceof Error ? e.message : 'network error');
+      throw new HomeloftError(0, 'network_error', e instanceof Error ? e.message : 'network error');
     }
 
     const text = await res.text();
@@ -126,9 +126,9 @@ export class HomeCloudClient {
       const j = (json && typeof json === 'object' ? json : {}) as { error?: unknown; message?: unknown };
       const code = typeof j.error === 'string' ? j.error : `http_${res.status}`;
       const message = typeof j.message === 'string' ? j.message : undefined;
-      throw new HomeCloudError(res.status, code, message ?? `${method} ${path} failed (${res.status})`);
+      throw new HomeloftError(res.status, code, message ?? `${method} ${path} failed (${res.status})`);
     }
-    if (json === undefined) throw new HomeCloudError(res.status, 'bad_response', 'response was not JSON');
+    if (json === undefined) throw new HomeloftError(res.status, 'bad_response', 'response was not JSON');
     return json as T;
   }
 }

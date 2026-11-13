@@ -1,6 +1,6 @@
 import json
 
-from homecloud_bridge.main import MAX_BATCH_BYTES, split_batches
+from homeloft_bridge.main import MAX_BATCH_BYTES, split_batches
 
 LIMIT = 128 * 1024
 

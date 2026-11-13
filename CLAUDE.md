@@ -1,4 +1,4 @@
-# CLAUDE.md / AGENTS.md — homecloud
+# CLAUDE.md / AGENTS.md — homeloft
 
 These instructions are for every coding agent working in this repo (Claude Code, Antigravity,
 Codex and others). `AGENTS.md` is a symlink to this file.
@@ -53,7 +53,7 @@ and the HTTP API. Change it **first**, in the same PR as the code. The three par
 ## Gotchas
 
 - DynamoDB tests use **moto**, not MagicMock, so boto3's real serializer runs. Floats go
-  through `hc_common.to_dynamo`, which converts them to `Decimal`. `online` is a reserved
+  through `hl_common.to_dynamo`, which converts them to `Decimal`. `online` is a reserved
   word, so alias it in expressions.
 - A new Python dependency for a Lambda breaks the "boto3 only, zip with archive_file"
   packaging. Avoid it, or add a layer on purpose.

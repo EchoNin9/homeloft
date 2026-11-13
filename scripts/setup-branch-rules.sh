@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # One-time repo setup (run as a repo admin, with the GitHub CLI logged in):
-#   ./scripts/setup-branch-rules.sh EchoNin9/homecloud
+#   ./scripts/setup-branch-rules.sh EchoNin9/homeloft
 # Creates two rulesets:
 #   main    - changes only via PR, CI plus branch-policy must pass (so only develop can merge in),
 #             no force-push or deletion

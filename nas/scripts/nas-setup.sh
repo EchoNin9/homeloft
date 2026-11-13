@@ -1,8 +1,8 @@
 #!/bin/sh
 # One-time NAS setup: run as root (sudo). Idempotent.
-# Usage: sudo DATA_ROOT=/volume1/docker/homecloud ./scripts/nas-setup.sh   (from the stack folder or anywhere)
+# Usage: sudo DATA_ROOT=/volume1/docker/homeloft ./scripts/nas-setup.sh   (from the stack folder or anywhere)
 set -eu
-R="${DATA_ROOT:-/volume1/docker/homecloud}"
+R="${DATA_ROOT:-/volume1/docker/homeloft}"
 STACK="$(cd "$(dirname "$0")/.." && pwd)"
 export PATH="/usr/local/bin:$PATH"
 
@@ -10,9 +10,9 @@ chown -R 10001:10001 "$R/bridge/certs" && chmod 700 "$R/bridge/certs" && chmod 6
 
 if [ ! -f "$R/mosquitto/passwd" ]; then
   PW=$(openssl rand -base64 18 | tr -d '/+=')
-  docker run --rm -v "$R/mosquitto:/work" eclipse-mosquitto:2 mosquitto_passwd -c -b /work/passwd homecloud "$PW"
+  docker run --rm -v "$R/mosquitto:/work" eclipse-mosquitto:2 mosquitto_passwd -c -b /work/passwd homeloft "$PW"
   chown 1883:1883 "$R/mosquitto/passwd" && chmod 600 "$R/mosquitto/passwd"
-  echo "MQTT user: homecloud  password: $PW   <-- save this, needed for the HA MQTT integration"
+  echo "MQTT user: homeloft  password: $PW   <-- save this, needed for the HA MQTT integration"
 fi
 chown -R 1883:1883 "$R/mosquitto/data" && chmod 755 "$R/mosquitto/data"   # Synology ACLs can leave it read-only
 

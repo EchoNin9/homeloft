@@ -28,9 +28,9 @@ export function domainTitle(d: string): string {
   return TITLES[d] ?? d.charAt(0).toUpperCase() + d.slice(1).replace(/_/g, ' ');
 }
 
-/** Area name the bridge adds (contract: `homecloud_area`), or '' if none. */
+/** Area name the bridge adds (contract: `homeloft_area`), or '' if none. */
 export function areaOf(e: Entity): string {
-  const a = e.attributes.homecloud_area;
+  const a = e.attributes.homeloft_area;
   return typeof a === 'string' ? a : '';
 }
 
@@ -299,8 +299,8 @@ export function sunTimes(entities: Entity[], timeZone?: string, nowMs = Date.now
   if (!a) return {};
   const hhmm = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone });
   const fmt = (t: number) => (Number.isFinite(t) ? hhmm.format(t) : undefined);
-  const lat = a.homecloud_latitude;
-  const lon = a.homecloud_longitude;
+  const lat = a.homeloft_latitude;
+  const lon = a.homeloft_longitude;
   if (typeof lat === 'number' && typeof lon === 'number') {
     const day = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone });
     const today = day.format(nowMs);

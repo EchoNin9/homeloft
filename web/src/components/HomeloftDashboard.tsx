@@ -1,6 +1,6 @@
 import { mdiAlertCircleOutline, mdiArrowDown, mdiCheck, mdiDragVertical, mdiArrowLeft, mdiArrowRight, mdiArrowUp, mdiCursorMove, mdiBookmarkPlusOutline, mdiFolderPlusOutline, mdiCheckboxMultipleMarkedOutline, mdiDocker, mdiDotsVertical, mdiDoorOpen, mdiHarddisk, mdiMagnify, mdiMenu, mdiPackageUp, mdiWeatherSunsetDown, mdiWeatherSunsetUp } from '@mdi/js';
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type DragEvent } from 'react';
-import type { Entity, Home, HomeCloudClient } from '../client';
+import type { Entity, Home, HomeloftClient } from '../client';
 import { EntityCard, type Action } from './EntityCard';
 import { isTracked } from './history';
 import { Icon } from './icons';
@@ -11,8 +11,8 @@ import { DEFAULT_PREFS, MAX_QUERIES, domainOf, errorMessage, formatLastSeen, fri
 import { getTheme, initTheme, setTheme, type Theme } from '../theme';
 import './dashboard.css';
 
-export interface HomeCloudDashboardProps {
-  client: HomeCloudClient;
+export interface HomeloftDashboardProps {
+  client: HomeloftClient;
   /** Pin a home. If omitted, a picker is shown. */
   homeId?: string;
   /** Poll interval in ms while the tab is visible. Default 5000. */
@@ -40,8 +40,8 @@ const store = {
 // Prefs live in localStorage and sync to the account (docs/contract.md "Prefs").
 // `<key>.dirty` marks local edits the server hasn't confirmed; they win over the server copy.
 // ponytail: last write wins across devices; merge per field if two devices edit at once.
-function usePrefs(client: HomeCloudClient, homeId: string | undefined) {
-  const key = `hc.prefs.${homeId ?? ''}`;
+function usePrefs(client: HomeloftClient, homeId: string | undefined) {
+  const key = `hl.prefs.${homeId ?? ''}`;
   const load = (): ViewPrefs => {
     try {
       return { ...DEFAULT_PREFS, ...JSON.parse(store.get(key) ?? '{}') };
@@ -102,7 +102,7 @@ function usePrefs(client: HomeCloudClient, homeId: string | undefined) {
 function useCollapsed() {
   const [v, setV] = useState(() => {
     try {
-      return localStorage.getItem('hc.side') === '1';
+      return localStorage.getItem('hl.side') === '1';
     } catch {
       return false;
     }
@@ -110,7 +110,7 @@ function useCollapsed() {
   const toggle = () =>
     setV((c) => {
       try {
-        localStorage.setItem('hc.side', c ? '0' : '1');
+        localStorage.setItem('hl.side', c ? '0' : '1');
       } catch {
         /* this session only */
       }
@@ -124,7 +124,7 @@ const ALERT_ICON = { door: mdiDoorOpen, service: mdiDocker, drive: mdiHarddisk, 
 const toggle = (list: string[], id: string) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
 
 
-export function HomeCloudDashboard({ client, homeId: pinnedHome, pollMs = 5000, onSignOut }: HomeCloudDashboardProps) {
+export function HomeloftDashboard({ client, homeId: pinnedHome, pollMs = 5000, onSignOut }: HomeloftDashboardProps) {
   const [homes, setHomes] = useState<Home[] | null>(null);
   const [selected, setSelected] = useState<string | undefined>(pinnedHome);
   const [entities, setEntities] = useState<Entity[] | null>(null);
@@ -334,7 +334,7 @@ export function HomeCloudDashboard({ client, homeId: pinnedHome, pollMs = 5000, 
   const multiHome = !pinnedHome && (homes?.length ?? 0) > 1;
 
   return (
-    <div className="hc-dash" data-collapsed={collapsed || undefined}>
+    <div className="hl-dash" data-collapsed={collapsed || undefined}>
       <Sidebar
         id={navId}
         open={navOpen}
@@ -385,52 +385,52 @@ export function HomeCloudDashboard({ client, homeId: pinnedHome, pollMs = 5000, 
         onSignOut={onSignOut}
       />
 
-      <main className="hc-main" ref={mainRef}>
-        <header className="hc-toolbar">
-          <button type="button" className="hc-icon-btn hc-menu-btn" aria-label="Open navigation" aria-expanded={navOpen} aria-controls={navId} onClick={() => setNavOpen(true)}>
+      <main className="hl-main" ref={mainRef}>
+        <header className="hl-toolbar">
+          <button type="button" className="hl-icon-btn hl-menu-btn" aria-label="Open navigation" aria-expanded={navOpen} aria-controls={navId} onClick={() => setNavOpen(true)}>
             <Icon path={mdiMenu} />
           </button>
           {multiHome ? (
             <>
-              <label htmlFor={`${homeLabelId}-sel`} className="hc-sr">Home</label>
-              <select id={`${homeLabelId}-sel`} className="hc-select hc-title-select" value={selected ?? ''} onChange={(e) => switchHome(e.target.value)}>
+              <label htmlFor={`${homeLabelId}-sel`} className="hl-sr">Home</label>
+              <select id={`${homeLabelId}-sel`} className="hl-select hl-title-select" value={selected ?? ''} onChange={(e) => switchHome(e.target.value)}>
                 {homes?.map((h) => <option key={h.homeId} value={h.homeId}>{h.homeId}</option>)}
               </select>
             </>
           ) : (
-            <h1 className="hc-title">{selected ?? (loading ? 'homecloud' : 'No home')}</h1>
+            <h1 className="hl-title">{selected ?? (loading ? 'homeloft' : 'No home')}</h1>
           )}
           {home && (
             <span
-              className="hc-status"
+              className="hl-status"
               data-online={home.online || undefined}
               title={home.lastSeenTs ? `Last seen ${new Date(home.lastSeenTs).toLocaleString()}` : undefined}
             >
-              <span className="hc-dot" aria-hidden="true" />
+              <span className="hl-dot" aria-hidden="true" />
               {home.online ? 'Online' : 'Offline'}
-              <span className="hc-status-seen"> · {formatLastSeen(home.lastSeenTs)}</span>
+              <span className="hl-status-seen"> · {formatLastSeen(home.lastSeenTs)}</span>
             </span>
           )}
-          <div className="hc-search">
-            <label htmlFor={searchId} className="hc-sr">Search entities</label>
+          <div className="hl-search">
+            <label htmlFor={searchId} className="hl-sr">Search entities</label>
             <Icon path={mdiMagnify} size={20} />
-            <input id={searchId} type="search" className="hc-input" placeholder="Search" value={filter} onChange={(e) => setFilter(e.target.value)} />
+            <input id={searchId} type="search" className="hl-input" placeholder="Search" value={filter} onChange={(e) => setFilter(e.target.value)} />
           </div>
-          <details className="hc-menu hc-overflow" ref={menuRef}>
-            <summary className="hc-icon-btn" aria-label="More options"><Icon path={mdiDotsVertical} /></summary>
-            <div className="hc-menu-body hc-menu-right" onClick={(e) => (e.target as HTMLElement).closest('button') && menuRef.current?.removeAttribute('open')}>
-              <button type="button" className="hc-menu-item" onClick={() => (selecting ? stopSelecting() : setSelecting(true))}>
+          <details className="hl-menu hl-overflow" ref={menuRef}>
+            <summary className="hl-icon-btn" aria-label="More options"><Icon path={mdiDotsVertical} /></summary>
+            <div className="hl-menu-body hl-menu-right" onClick={(e) => (e.target as HTMLElement).closest('button') && menuRef.current?.removeAttribute('open')}>
+              <button type="button" className="hl-menu-item" onClick={() => (selecting ? stopSelecting() : setSelecting(true))}>
                 {selecting ? 'Done selecting' : 'Select entities'}
               </button>
               {hiddenCount > 0 && (
-                <label className="hc-menu-item hc-check">
+                <label className="hl-menu-item hl-check">
                   <input type="checkbox" checked={prefs.showHidden} onChange={(e) => setPrefs({ showHidden: e.target.checked })} />
                   Show hidden ({hiddenCount})
                 </label>
               )}
-              <div className="hc-menu-theme">
+              <div className="hl-menu-theme">
                 <span id={themeId}>Theme</span>
-                <span className="hc-seg" role="group" aria-labelledby={themeId}>
+                <span className="hl-seg" role="group" aria-labelledby={themeId}>
                   {(['system', 'light', 'dark'] as const).map((t) => (
                     <button key={t} type="button" aria-pressed={theme === t} onClick={() => { setTheme(t); setThemeState(t); }}>
                       {{ system: 'System', light: 'Light', dark: 'Dark' }[t]}
@@ -443,43 +443,43 @@ export function HomeCloudDashboard({ client, homeId: pinnedHome, pollMs = 5000, 
         </header>
 
         {(problems.length > 0 || updates.length > 0 || sun.rise || sun.set) && (
-          <section id={sectionId('_warn')} className="hc-badges" aria-label="Status">
+          <section id={sectionId('_warn')} className="hl-badges" aria-label="Status">
             {problems.map((w) => (
-              <button key={w.entity.entity_id} type="button" className="hc-badge" data-kind={w.kind} onClick={() => setInfoFor(w.entity.entity_id)}>
+              <button key={w.entity.entity_id} type="button" className="hl-badge" data-kind={w.kind} onClick={() => setInfoFor(w.entity.entity_id)}>
                 <Icon path={ALERT_ICON[w.kind]} size={18} />
-                <span className="hc-badge-text">
-                  <span className="hc-badge-label">{{ door: 'Door open', service: 'Service down', drive: 'Drive hot', update: '' }[w.kind]}</span>
+                <span className="hl-badge-text">
+                  <span className="hl-badge-label">{{ door: 'Door open', service: 'Service down', drive: 'Drive hot', update: '' }[w.kind]}</span>
                   {w.text}
                 </span>
               </button>
             ))}
             {updates.length > 0 && (
-              <button type="button" className="hc-badge" data-kind="update" onClick={() => (updates.length === 1 ? setInfoFor(updates[0]!.entity.entity_id) : setUpdatesOpen(true))}>
+              <button type="button" className="hl-badge" data-kind="update" onClick={() => (updates.length === 1 ? setInfoFor(updates[0]!.entity.entity_id) : setUpdatesOpen(true))}>
                 <Icon path={mdiPackageUp} size={18} />
-                <span className="hc-badge-text">{updates.length === 1 ? updates[0]!.text : `${updates.length} updates available`}</span>
+                <span className="hl-badge-text">{updates.length === 1 ? updates[0]!.text : `${updates.length} updates available`}</span>
               </button>
             )}
             {sun.rise && (
-              <button type="button" className="hc-badge" data-kind="sun" title="Today’s sunrise: open Sun &amp; moon" onClick={() => setInfoFor('sun.sun')}>
-                <Icon path={mdiWeatherSunsetUp} size={18} /><span className="hc-badge-text"><span className="hc-sr">Sunrise </span>{sun.rise}</span>
+              <button type="button" className="hl-badge" data-kind="sun" title="Today’s sunrise: open Sun &amp; moon" onClick={() => setInfoFor('sun.sun')}>
+                <Icon path={mdiWeatherSunsetUp} size={18} /><span className="hl-badge-text"><span className="hl-sr">Sunrise </span>{sun.rise}</span>
               </button>
             )}
             {sun.set && (
-              <button type="button" className="hc-badge" data-kind="sun" title="Today’s sunset: open Sun &amp; moon" onClick={() => setInfoFor('sun.sun')}>
-                <Icon path={mdiWeatherSunsetDown} size={18} /><span className="hc-badge-text"><span className="hc-sr">Sunset </span>{sun.set}</span>
+              <button type="button" className="hl-badge" data-kind="sun" title="Today’s sunset: open Sun &amp; moon" onClick={() => setInfoFor('sun.sun')}>
+                <Icon path={mdiWeatherSunsetDown} size={18} /><span className="hl-badge-text"><span className="hl-sr">Sunset </span>{sun.set}</span>
               </button>
             )}
           </section>
         )}
 
         {prefs.group === 'custom' && prefs.only && prefs.groups[prefs.only] && (
-          <div className="hc-group-head">
-            <label className="hc-group-query">
+          <div className="hl-group-head">
+            <label className="hl-group-query">
               <span>Members matching</span>
-              <span className="hc-search-box">
+              <span className="hl-search-box">
                 <Icon path={mdiMagnify} size={18} />
                 <input
-                  className="hc-input"
+                  className="hl-input"
                   type="search"
                   placeholder="Add a search, e.g. bedroom"
                   value={prefs.groupQueries[prefs.only] ?? ''}
@@ -491,7 +491,7 @@ export function HomeCloudDashboard({ client, homeId: pinnedHome, pollMs = 5000, 
                 />
               </span>
             </label>
-            <span className="hc-muted">
+            <span className="hl-muted">
               {(prefs.groups[prefs.only] ?? []).length} added by hand
               {(prefs.groupOut[prefs.only] ?? []).length > 0 && <> · {prefs.groupOut[prefs.only]!.length} removed from the search</>}
               {' '}· add or remove more with Select or an entity's Groups menu
@@ -500,20 +500,20 @@ export function HomeCloudDashboard({ client, homeId: pinnedHome, pollMs = 5000, 
         )}
 
         {filter.trim() && entities && (
-          <div className="hc-results" role="status">
+          <div className="hl-results" role="status">
             <span>
               {shownIds.length} {shownIds.length === 1 ? 'match' : 'matches'} for “{filter.trim()}”
               {hiddenMatches > 0 && (
                 <>
                   {' '}· {hiddenMatches} hidden
-                  <button type="button" className="hc-link-btn" onClick={() => setPrefs({ showHidden: true })}>Show</button>
+                  <button type="button" className="hl-link-btn" onClick={() => setPrefs({ showHidden: true })}>Show</button>
                 </>
               )}
             </span>
             {shownIds.length > 0 && (
               <button
                 type="button"
-                className="hc-chip-btn"
+                className="hl-chip-btn"
                 onClick={() => {
                   setSelecting(true);
                   setPicked(shownIds);
@@ -522,33 +522,33 @@ export function HomeCloudDashboard({ client, homeId: pinnedHome, pollMs = 5000, 
                 <Icon path={mdiCheckboxMultipleMarkedOutline} size={18} /> Select {shownIds.length === 1 ? 'it' : `all ${shownIds.length}`}
               </button>
             )}
-            <button type="button" className="hc-chip-btn" onClick={saveAsGroup}>
+            <button type="button" className="hl-chip-btn" onClick={saveAsGroup}>
               <Icon path={mdiFolderPlusOutline} size={18} /> Save as group
             </button>
             {!prefs.queries.includes(filter.trim()) && (
-              <button type="button" className="hc-chip-btn" onClick={onSaveQuery}>
+              <button type="button" className="hl-chip-btn" onClick={onSaveQuery}>
                 <Icon path={mdiBookmarkPlusOutline} size={18} /> Save search
               </button>
             )}
-            {queryMsg && <span className="hc-muted">{queryMsg}</span>}
+            {queryMsg && <span className="hl-muted">{queryMsg}</span>}
           </div>
         )}
 
         {error != null && (
-          <p className="hc-banner" role="alert">
-            <Icon path={mdiAlertCircleOutline} size={20} /> Can't reach HomeCloud ({errorMessage(error)}). Showing last known state; retrying…
+          <p className="hl-banner" role="alert">
+            <Icon path={mdiAlertCircleOutline} size={20} /> Can't reach Homeloft ({errorMessage(error)}). Showing last known state; retrying…
           </p>
         )}
         {home && !home.online && (
-          <p className="hc-banner hc-banner-warn"><Icon path={mdiAlertCircleOutline} size={20} /> This home is offline, so controls are disabled and values may be stale.</p>
+          <p className="hl-banner hl-banner-warn"><Icon path={mdiAlertCircleOutline} size={20} /> This home is offline, so controls are disabled and values may be stale.</p>
         )}
 
         {loading || (selected && entities === null && !error) ? (
-          <p className="hc-empty" role="status">Loading…</p>
+          <p className="hl-empty" role="status">Loading…</p>
         ) : homes && homes.length === 0 ? (
-          <p className="hc-empty">No homes yet. Once your NAS bridge connects, it will appear here.</p>
+          <p className="hl-empty">No homes yet. Once your NAS bridge connects, it will appear here.</p>
         ) : groups.length === 0 && entities ? (
-          <p className="hc-empty">
+          <p className="hl-empty">
             {filter ? `No entities match “${filter}”.`
               : prefs.group === 'custom' && prefs.only ? `“${prefs.only}” has no members yet. Add a search above, or pick entities with Select.`
               : 'This home has not reported any entities yet.'}
@@ -566,14 +566,14 @@ export function HomeCloudDashboard({ client, homeId: pinnedHome, pollMs = 5000, 
             const dragging = () => (dragId.current && ids.includes(dragId.current) ? dragId.current : null);
             const custom = !prefs.defaultSort.includes(title);
             return (
-            <section key={key} className="hc-section" data-arranging={arr || undefined} aria-labelledby={sectionId(key)}>
-              <div className="hc-section-head">
-              <h2 id={sectionId(key)} className="hc-section-title">
-                {title} <span className="hc-count">{list.length}</span>
+            <section key={key} className="hl-section" data-arranging={arr || undefined} aria-labelledby={sectionId(key)}>
+              <div className="hl-section-head">
+              <h2 id={sectionId(key)} className="hl-section-title">
+                {title} <span className="hl-count">{list.length}</span>
               </h2>
                 {key.startsWith('grp:') && key !== 'grp:' && !selecting && (
-                  <span className="hc-section-tools">
-                    <span className="hc-seg" role="group" aria-label={`Sort ${title}`}>
+                  <span className="hl-section-tools">
+                    <span className="hl-seg" role="group" aria-label={`Sort ${title}`}>
                       {([[true, 'Custom'], [false, prefs.sort === 'recent' ? 'Recent' : 'A–Z']] as const).map(([c, label]) => (
                         <button
                           key={label}
@@ -585,17 +585,17 @@ export function HomeCloudDashboard({ client, homeId: pinnedHome, pollMs = 5000, 
                         </button>
                       ))}
                     </span>
-                    <button type="button" className={arr ? 'hc-chip-btn hc-chip-primary' : 'hc-chip-btn'} onClick={() => setArranging(arranging === title ? null : title)}>
+                    <button type="button" className={arr ? 'hl-chip-btn hl-chip-primary' : 'hl-chip-btn'} onClick={() => setArranging(arranging === title ? null : title)}>
                       <Icon path={arr ? mdiCheck : mdiCursorMove} size={18} /> {arr ? 'Done' : 'Arrange'}
                     </button>
                   </span>
                 )}
               </div>
               {arranging === title && key.startsWith('grp:') && (
-                <p className="hc-muted hc-arrange-hint">Drag a tile anywhere in the group, or use the arrows. Saved automatically.</p>
+                <p className="hl-muted hl-arrange-hint">Drag a tile anywhere in the group, or use the arrows. Saved automatically.</p>
               )}
               <ul
-                className="hc-tiles"
+                className="hl-tiles"
                 {...(arr ? {
                   // Drop anywhere in the grid: gaps, either half of a tile, or after the last one.
                   onDragOver: (ev: DragEvent<HTMLUListElement>) => {
@@ -604,7 +604,7 @@ export function HomeCloudDashboard({ client, homeId: pinnedHome, pollMs = 5000, 
                     ev.preventDefault();
                     // Indicator: a line in the gap the tile would land in (none where it wouldn't move).
                     const ul = ev.currentTarget.getBoundingClientRect();
-                    const rects = [...ev.currentTarget.children].filter((c) => c.classList.contains('hc-tile')).map((c) => c.getBoundingClientRect());
+                    const rects = [...ev.currentTarget.children].filter((c) => c.classList.contains('hl-tile')).map((c) => c.getBoundingClientRect());
                     const k = dropSlot(rects, ev.clientX, ev.clientY);
                     const from = ids.indexOf(id);
                     const r = rects[Math.min(k, rects.length - 1)]!;
@@ -621,24 +621,24 @@ export function HomeCloudDashboard({ client, homeId: pinnedHome, pollMs = 5000, 
                     dragId.current = null;
                     setDropLine(null);
                     if (!id) return;
-                    const rects = [...ev.currentTarget.children].filter((c) => c.classList.contains('hc-tile')).map((c) => c.getBoundingClientRect());
+                    const rects = [...ev.currentTarget.children].filter((c) => c.classList.contains('hl-tile')).map((c) => c.getBoundingClientRect());
                     move(id, dropIndex(rects, ids.indexOf(id), ev.clientX, ev.clientY));
                   },
                 } : {})}
               >
                 {dropLine?.group === title && arr && (
-                  <li className="hc-drop-line" aria-hidden="true" style={{ left: dropLine.x, top: dropLine.y, height: dropLine.h }} />
+                  <li className="hl-drop-line" aria-hidden="true" style={{ left: dropLine.x, top: dropLine.y, height: dropLine.h }} />
                 )}
                 {list.map((e, i) => {
                   const nudge = (to: number, dir: string) => {
                     move(e.entity_id, to);
-                    requestAnimationFrame(() => document.getElementById(`hc-mv-${dir}-${e.entity_id}`)?.focus());
+                    requestAnimationFrame(() => document.getElementById(`hl-mv-${dir}-${e.entity_id}`)?.focus());
                   };
                   const cols = (el: HTMLElement) =>
                     getComputedStyle(el.closest('ul')!).gridTemplateColumns.split(' ').filter(Boolean).length || 1;
                   const name = friendlyName(e);
                   const btn = (dir: string, label: string, icon: string, off: boolean, to: (c: number) => number) => (
-                    <button type="button" id={`hc-mv-${dir}-${e.entity_id}`} className="hc-icon-btn" aria-label={`Move ${name} ${label}`} disabled={off}
+                    <button type="button" id={`hl-mv-${dir}-${e.entity_id}`} className="hl-icon-btn" aria-label={`Move ${name} ${label}`} disabled={off}
                       onClick={(ev) => nudge(Math.max(0, Math.min(list.length - 1, to(cols(ev.currentTarget)))), dir)}>
                       <Icon path={icon} size={18} />
                     </button>
@@ -667,9 +667,9 @@ export function HomeCloudDashboard({ client, homeId: pinnedHome, pollMs = 5000, 
                         onDragEnd: (ev) => { dragId.current = null; setDropLine(null); delete ev.currentTarget.dataset.dragging; },
                       } : undefined}
                     >
-                      {arr && <span className="hc-tile-grip" aria-hidden="true"><Icon path={mdiDragVertical} size={18} /></span>}
+                      {arr && <span className="hl-tile-grip" aria-hidden="true"><Icon path={mdiDragVertical} size={18} /></span>}
                       {arr && (
-                        <span className="hc-tile-move">
+                        <span className="hl-tile-move">
                           {btn('u', 'up a row', mdiArrowUp, i === 0, (c) => i - c)}
                           {btn('l', 'earlier', mdiArrowLeft, i === 0, () => i - 1)}
                           {btn('r', 'later', mdiArrowRight, i === list.length - 1, () => i + 1)}
@@ -686,15 +686,15 @@ export function HomeCloudDashboard({ client, homeId: pinnedHome, pollMs = 5000, 
         )}
 
         {selecting && (
-          <div className="hc-bulk" role="region" aria-label="Bulk actions">
-            <span className="hc-bulk-count">{picked.length} selected</span>
-            <button type="button" className="hc-btn" onClick={() => setPicked((p) => addAll(p, shownIds))}>
+          <div className="hl-bulk" role="region" aria-label="Bulk actions">
+            <span className="hl-bulk-count">{picked.length} selected</span>
+            <button type="button" className="hl-btn" onClick={() => setPicked((p) => addAll(p, shownIds))}>
               Select all shown ({shownIds.length})
             </button>
-            <button type="button" className="hc-btn" disabled={!picked.length} onClick={() => setPicked([])}>Clear</button>
-            <span className="hc-bulk-group">
+            <button type="button" className="hl-btn" disabled={!picked.length} onClick={() => setPicked([])}>Clear</button>
+            <span className="hl-bulk-group">
               <input
-                className="hc-input"
+                className="hl-input"
                 list={groupListId}
                 placeholder="Group name"
                 aria-label="Group name for selected"
@@ -705,19 +705,19 @@ export function HomeCloudDashboard({ client, homeId: pinnedHome, pollMs = 5000, 
               <datalist id={groupListId}>
                 {groupNames.map((g) => <option key={g} value={g} />)}
               </datalist>
-              <button type="button" className="hc-btn hc-btn-primary" disabled={!picked.length || !bulkGroup.trim()} onClick={() => bulkToGroup(true)}>
+              <button type="button" className="hl-btn hl-btn-primary" disabled={!picked.length || !bulkGroup.trim()} onClick={() => bulkToGroup(true)}>
                 {bulkGroup.trim() && !prefs.groups[bulkGroup.trim()] ? 'Create group' : 'Add to group'}
               </button>
-              <button type="button" className="hc-btn" disabled={!picked.length || !prefs.groups[bulkGroup.trim()]} onClick={() => bulkToGroup(false)}>Remove</button>
+              <button type="button" className="hl-btn" disabled={!picked.length || !prefs.groups[bulkGroup.trim()]} onClick={() => bulkToGroup(false)}>Remove</button>
             </span>
-            <button type="button" className="hc-btn" disabled={!picked.length} onClick={() => bulk(`Favourited ${n(picked.length)}`, { favs: addAll(prefs.favs, picked) })}>Favourite</button>
-            <button type="button" className="hc-btn" disabled={!picked.length} onClick={() => bulk(`Hid ${n(picked.length)}`, { hidden: addAll(prefs.hidden, picked) })}>Hide</button>
-            <button type="button" className="hc-btn" disabled={!picked.length} onClick={() => bulk(`Unhid ${n(picked.length)}`, { hidden: dropAll(prefs.hidden, picked) })}>Unhide</button>
-            <button type="button" className="hc-btn hc-btn-primary" onClick={stopSelecting}>Done</button>
+            <button type="button" className="hl-btn" disabled={!picked.length} onClick={() => bulk(`Favourited ${n(picked.length)}`, { favs: addAll(prefs.favs, picked) })}>Favourite</button>
+            <button type="button" className="hl-btn" disabled={!picked.length} onClick={() => bulk(`Hid ${n(picked.length)}`, { hidden: addAll(prefs.hidden, picked) })}>Hide</button>
+            <button type="button" className="hl-btn" disabled={!picked.length} onClick={() => bulk(`Unhid ${n(picked.length)}`, { hidden: dropAll(prefs.hidden, picked) })}>Unhide</button>
+            <button type="button" className="hl-btn hl-btn-primary" onClick={stopSelecting}>Done</button>
             {bulkMsg && (
-              <p className="hc-bulk-msg" role="status">
+              <p className="hl-bulk-msg" role="status">
                 {bulkMsg.text}
-                <button type="button" className="hc-link-btn" onClick={() => { setPrefs(bulkMsg.undo); setBulkMsg(null); }}>Undo</button>
+                <button type="button" className="hl-link-btn" onClick={() => { setPrefs(bulkMsg.undo); setBulkMsg(null); }}>Undo</button>
               </p>
             )}
           </div>
@@ -746,12 +746,12 @@ export function HomeCloudDashboard({ client, homeId: pinnedHome, pollMs = 5000, 
       )}
       {updatesOpen && <UpdatesDialog updates={updates.map((w) => w.entity)} onClose={() => setUpdatesOpen(false)} />}
 
-      <p className="hc-sr" role="status">{announce}</p>
-      <div className="hc-toasts" role="region" aria-label="Notifications" aria-live="assertive">
+      <p className="hl-sr" role="status">{announce}</p>
+      <div className="hl-toasts" role="region" aria-label="Notifications" aria-live="assertive">
         {toasts.map((t) => (
-          <div key={t.id} className="hc-toast">
+          <div key={t.id} className="hl-toast">
             <span>{t.text}</span>
-            <button type="button" className="hc-toast-x" aria-label="Dismiss" onClick={() => setToasts((x) => x.filter((y) => y.id !== t.id))}>×</button>
+            <button type="button" className="hl-toast-x" aria-label="Dismiss" onClick={() => setToasts((x) => x.filter((y) => y.id !== t.id))}>×</button>
           </div>
         ))}
       </div>
@@ -764,11 +764,11 @@ function UpdatesDialog({ updates, onClose }: { updates: Entity[]; onClose: () =>
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => ref.current?.showModal(), []);
   return (
-    <dialog ref={ref} className="hc-dialog" onClose={onClose} aria-labelledby="hc-upd-title">
-      <h2 id="hc-upd-title">Updates</h2>
-      {updates.length === 0 && <p className="hc-muted">Everything is up to date.</p>}
+    <dialog ref={ref} className="hl-dialog" onClose={onClose} aria-labelledby="hl-upd-title">
+      <h2 id="hl-upd-title">Updates</h2>
+      {updates.length === 0 && <p className="hl-muted">Everything is up to date.</p>}
       {updates.map((e) => (
-        <details key={e.entity_id} className="hc-update-item">
+        <details key={e.entity_id} className="hl-update-item">
           <summary>
             <Icon path={mdiPackageUp} size={20} />
             <span>{updateInfo(e).container ? updateInfo(e).service : friendlyName(e)}</span>
@@ -776,8 +776,8 @@ function UpdatesDialog({ updates, onClose }: { updates: Entity[]; onClose: () =>
           <UpdateBody entity={e} />
         </details>
       ))}
-      <form method="dialog" className="hc-dialog-actions">
-        <button className="hc-btn">Close</button>
+      <form method="dialog" className="hl-dialog-actions">
+        <button className="hl-btn">Close</button>
       </form>
     </dialog>
   );

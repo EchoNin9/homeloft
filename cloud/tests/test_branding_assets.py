@@ -2,7 +2,7 @@
 import re
 from pathlib import Path
 
-BRANDING = Path(__file__).resolve().parents[1] / "terraform" / "modules" / "homecloud" / "branding"
+BRANDING = Path(__file__).resolve().parents[1] / "terraform" / "modules" / "homeloft" / "branding"
 
 
 def _size(svg: Path) -> tuple[float, float]:

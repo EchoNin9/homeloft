@@ -15,7 +15,7 @@ from .filters import AREA_ATTR, LAT_ATTR, LON_ATTR, EntityFilter
 from .ha import HAClient, HAError
 from .iot import IoTClient, now_ms
 
-log = logging.getLogger("homecloud_bridge")
+log = logging.getLogger("homeloft_bridge")
 MAX_BATCH_BYTES = 120_000  # headroom under IoT Core's 128 KB limit
 DEBOUNCE_S = 0.5
 SNAPSHOT_EVERY_S = 15 * 60
@@ -168,7 +168,7 @@ async def run(cfg: Config) -> None:
         loop.add_signal_handler(sig, stop.set)
     tasks = [asyncio.create_task(c) for c in (
         bridge.ha.run(), bridge.iot.run(), bridge.flusher(), bridge.snapshotter())]
-    log.info("homecloud-bridge %s started for home %s", __version__, cfg.home_id)
+    log.info("homeloft-bridge %s started for home %s", __version__, cfg.home_id)
     stopper = asyncio.create_task(stop.wait())
     await asyncio.wait([stopper, *tasks], return_when=asyncio.FIRST_COMPLETED)
     crashed = [t for t in tasks if t.done() and not t.cancelled()]

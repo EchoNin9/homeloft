@@ -75,7 +75,7 @@ resource "aws_cognito_user_pool_client" "this" {
   }
 }
 
-# Sign-in page styled like the dashboard: HomeCloud logo, teal accent, dark theme.
+# Sign-in page styled like the dashboard: Homeloft logo, teal accent, dark theme.
 # Colours are RRGGBBAA hex without '#'. Values Cognito doesn't know are ignored, so keep to its schema.
 resource "aws_cognito_managed_login_branding" "this" {
   count        = local.create_pool && var.cognito_branding ? 1 : 0

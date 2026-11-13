@@ -11,7 +11,7 @@ import { domainOf } from './util';
 /** One Material Design icon (the set Home Assistant uses). Decorative unless `label` is given. */
 export function Icon({ path, label, size = 24 }: { path: string; label?: string; size?: number }) {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} className="hc-icon" role={label ? 'img' : undefined} aria-label={label} aria-hidden={label ? undefined : true}>
+    <svg viewBox="0 0 24 24" width={size} height={size} className="hl-icon" role={label ? 'img' : undefined} aria-label={label} aria-hidden={label ? undefined : true}>
       <path d={path} fill="currentColor" />
     </svg>
   );

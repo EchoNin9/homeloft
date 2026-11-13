@@ -30,20 +30,20 @@ resource "aws_iot_policy" "home" {
         Effect = "Allow"
         Action = "iot:Publish"
         Resource = [
-          "arn:${local.partition}:iot:${local.region}:${local.account_id}:topic/homecloud/${each.key}/state",
-          "arn:${local.partition}:iot:${local.region}:${local.account_id}:topic/homecloud/${each.key}/cmd/ack",
-          "arn:${local.partition}:iot:${local.region}:${local.account_id}:topic/homecloud/${each.key}/status",
+          "arn:${local.partition}:iot:${local.region}:${local.account_id}:topic/homeloft/${each.key}/state",
+          "arn:${local.partition}:iot:${local.region}:${local.account_id}:topic/homeloft/${each.key}/cmd/ack",
+          "arn:${local.partition}:iot:${local.region}:${local.account_id}:topic/homeloft/${each.key}/status",
         ]
       },
       {
         Effect   = "Allow"
         Action   = "iot:Subscribe"
-        Resource = "arn:${local.partition}:iot:${local.region}:${local.account_id}:topicfilter/homecloud/${each.key}/cmd"
+        Resource = "arn:${local.partition}:iot:${local.region}:${local.account_id}:topicfilter/homeloft/${each.key}/cmd"
       },
       {
         Effect   = "Allow"
         Action   = "iot:Receive"
-        Resource = "arn:${local.partition}:iot:${local.region}:${local.account_id}:topic/homecloud/${each.key}/cmd"
+        Resource = "arn:${local.partition}:iot:${local.region}:${local.account_id}:topic/homeloft/${each.key}/cmd"
       },
     ]
   })
@@ -63,13 +63,13 @@ resource "aws_iot_thing_principal_attachment" "home" {
 
 # --- Topic rules -> ingest Lambda ---------------------------------------------
 # Same SELECT for every rule; one rule per topic (see docs/integrate.md for why this
-# is not a single `FROM 'homecloud/+/#' WHERE ...` rule).
+# is not a single `FROM 'homeloft/+/#' WHERE ...` rule).
 locals {
   rule_select = "SELECT *, topic(2) AS homeId, topic(3) AS kind, topic(4) AS sub, clientid() AS clientId"
   rules = {
-    state  = "homecloud/+/state"
-    status = "homecloud/+/status"
-    ack    = "homecloud/+/cmd/ack"
+    state  = "homeloft/+/state"
+    status = "homeloft/+/status"
+    ack    = "homeloft/+/cmd/ack"
   }
   rule_prefix = replace(var.name_prefix, "-", "_")
 }

@@ -1,4 +1,4 @@
-# HomeCloud
+# Homeloft
 
 **Home Assistant on your Synology, with your own cloud dashboard and API on AWS.**
 
@@ -18,10 +18,10 @@ The full message and API contract is in [docs/contract.md](docs/contract.md).
 | Path | What it is |
 |---|---|
 | `nas/` | Docker Compose stack: Home Assistant, Mosquitto, Zigbee2MQTT (optional), bridge |
-| `cloud/terraform/modules/homecloud` | Reusable Terraform module |
+| `cloud/terraform/modules/homeloft` | Reusable Terraform module |
 | `cloud/terraform/examples/` | `standalone` and `existing-cognito` deployments |
 | `cloud/lambdas/` | Ingest and API Lambdas (Python 3.12, boto3 only) |
-| `web/` | React dashboard, embeddable `<HomeCloudDashboard>` component and dependency-free `HomeCloudClient` |
+| `web/` | React dashboard, embeddable `<HomeloftDashboard>` component and dependency-free `HomeloftClient` |
 | `docs/` | Contract, Synology setup, integration recipes, [mobile app plan](docs/mobile.md) |
 
 ## Quick start
@@ -52,7 +52,7 @@ CloudFront). See [docs/integrate.md](docs/integrate.md#cost) for the assumptions
 ## Mobile apps
 
 Android and iOS apps are planned as a single Expo (React Native) app that reuses
-`HomeCloudClient`. They are deferred until the web UI is live and connected to the on-prem
+`HomeloftClient`. They are deferred until the web UI is live and connected to the on-prem
 stack (milestone M1). See
 [docs/mobile.md](docs/mobile.md).
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { HomeCloudClient, HomeCloudError } from './index';
+import { HomeloftClient, HomeloftError } from './index';
 
 type Call = { url: string; init: RequestInit };
 
@@ -14,7 +14,7 @@ function setup(responder: (url: string, init: RequestInit) => Response | Promise
     return responder(url, init);
   });
   const getToken = vi.fn(async () => 'tok123');
-  const client = new HomeCloudClient({
+  const client = new HomeloftClient({
     apiUrl: 'https://api.example.com/',
     getToken,
     fetch: fetchMock as unknown as typeof fetch,
@@ -86,10 +86,10 @@ describe('URL building and headers', () => {
 });
 
 describe('error mapping', () => {
-  it('maps {error,message} bodies to HomeCloudError', async () => {
+  it('maps {error,message} bodies to HomeloftError', async () => {
     const { client } = setup(() => json({ error: 'forbidden', message: 'not in group' }, 403));
     const err = await client.listHomes().catch((e) => e);
-    expect(err).toBeInstanceOf(HomeCloudError);
+    expect(err).toBeInstanceOf(HomeloftError);
     expect(err).toMatchObject({ status: 403, code: 'forbidden', message: 'not in group' });
   });
 
@@ -142,7 +142,7 @@ describe('waitForCommand', () => {
   it('rejects with timeout when it stays pending', async () => {
     const { client, calls } = setup(seq(['pending', null]));
     const err = await client.waitForCommand('h', 'c1', { intervalMs: 5, timeoutMs: 40 }).catch((e) => e);
-    expect(err).toBeInstanceOf(HomeCloudError);
+    expect(err).toBeInstanceOf(HomeloftError);
     expect(err).toMatchObject({ code: 'timeout' });
     expect(calls.length).toBeGreaterThan(1);
   });
@@ -156,7 +156,7 @@ describe('waitForCommand', () => {
 describe('prefs', () => {
   it('GETs and PUTs the caller prefs for a home', async () => {
     const calls: [string, RequestInit | undefined][] = [];
-    const c = new HomeCloudClient({
+    const c = new HomeloftClient({
       apiUrl: 'https://api/',
       getToken: async () => 't',
       fetch: async (u, init) => {

@@ -39,7 +39,7 @@ class IoTClient:
         self._on_connected = on_connected
         self._client: aiomqtt.Client | None = None
         self._tasks: set[asyncio.Task[None]] = set()
-        self._prefix = f"homecloud/{cfg.home_id}"
+        self._prefix = f"homeloft/{cfg.home_id}"
 
     @property
     def connected(self) -> bool:

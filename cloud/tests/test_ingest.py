@@ -26,7 +26,7 @@ def test_state_batch_floats_persist_as_decimal(ingest, table):
     assert isinstance(a["brightness"], Decimal)
     assert item["state"] == "heat" and item["updated_ts"] == 1760000000000
     # prove the wire type is a DynamoDB Number via the low-level client
-    raw = boto3.client("dynamodb").get_item(TableName="homecloud-state", Key={"PK": {"S": PK}, "SK": {"S": "ENTITY#climate.hall"}})
+    raw = boto3.client("dynamodb").get_item(TableName="homeloft-state", Key={"PK": {"S": PK}, "SK": {"S": "ENTITY#climate.hall"}})
     assert raw["Item"]["attributes"]["M"]["temperature"] == {"N": "21.5"}
 
 
@@ -107,7 +107,7 @@ def test_wrong_version_dropped(ingest, table):
 
 def test_client_id_mismatch_and_unknown_home_dropped(ingest, table):
     p = batch([{"entity_id": "light.a", "state": "on"}])
-    assert ingest.handler(iot_event("home1", "state", p, client="homecloud-home2"))["status"] == "dropped"
+    assert ingest.handler(iot_event("home1", "state", p, client="homeloft-home2"))["status"] == "dropped"
     assert ingest.handler(iot_event("evil", "state", p))["status"] == "dropped"
     assert ingest.handler(iot_event("home1", "cmd", p))["status"] == "dropped"  # cmd without /ack
 

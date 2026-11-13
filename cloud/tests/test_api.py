@@ -99,7 +99,7 @@ def test_command_happy_path_publishes_contract_payload(api, table):
     s, b, _ = call(api, "POST", "/v1/homes/home1/commands", body=GOOD, sub="sub-123")
     assert s == 202 and b["status"] == "pending" and re.fullmatch(r"c_[0-9A-Z]{26}", b["id"])
     (pub,) = api._IOT.published
-    assert pub["topic"] == "homecloud/home1/cmd" and pub["qos"] == 1
+    assert pub["topic"] == "homeloft/home1/cmd" and pub["qos"] == 1
     sent = json.loads(pub["payload"])
     # Contract section "Command": exact key set, v==1, ms timestamps, id matches response.
     assert set(sent) == CMD_PAYLOAD_KEYS

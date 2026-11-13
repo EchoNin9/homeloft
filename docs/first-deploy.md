@@ -22,17 +22,17 @@ Time: about 1–2 hours. Commands assume the repo root unless a `cd` says otherw
       The offset is fixed, with no DST. If your zone changes its clocks, pick the offset you're on
       most of the year. Summaries then split an hour off local midnight for the rest of the year.
 - [ ] Home Assistant isn't running yet, or you'll move an existing install into
-      `/volume1/docker/homecloud/homeassistant`.
+      `/volume1/docker/homeloft/homeassistant`.
 
 ## 1. State bucket (one time per AWS account)
 
-OpenTofu state for every HomeCloud stack lives in one S3 bucket. The bucket is versioned,
+OpenTofu state for every Homeloft stack lives in one S3 bucket. The bucket is versioned,
 encrypted, blocks public access, allows TLS only, and expires old state versions after 90 days.
 Locking uses S3 lockfiles, so no DynamoDB table is needed.
 
 ```sh
 cd cloud/terraform/bootstrap
-tofu init && tofu apply                   # creates homecloud-tfstate-<account>-<region>
+tofu init && tofu apply                   # creates homeloft-tfstate-<account>-<region>
 tofu output -raw backend_hcl              # you'll paste this in step 3
 ```
 
@@ -43,22 +43,22 @@ laptop:
 printf 'terraform {\n  backend "s3" {}\n}\n' > backend_override.tf   # gitignored
 tofu init -migrate-state \
   -backend-config="bucket=$(tofu output -raw bucket)" \
-  -backend-config="key=homecloud/bootstrap.tfstate" \
+  -backend-config="key=homeloft/bootstrap.tfstate" \
   -backend-config="region=$AWS_REGION" \
   -backend-config="encrypt=true" -backend-config="use_lockfile=true"
 rm -f terraform.tfstate terraform.tfstate.backup
 ```
 
-**Smoke test:** `aws s3 ls s3://<bucket>/homecloud/` lists `bootstrap.tfstate`, and
+**Smoke test:** `aws s3 ls s3://<bucket>/homeloft/` lists `bootstrap.tfstate`, and
 `aws s3api get-bucket-versioning --bucket <bucket>` shows `"Status": "Enabled"`.
 
 ## 2. Device key and CSR (on the NAS, so the private key never leaves it)
 
 ```sh
 ssh you@nas
-sudo mkdir -p /volume1/docker/homecloud/bridge/certs && cd /volume1/docker/homecloud/bridge/certs
+sudo mkdir -p /volume1/docker/homeloft/bridge/certs && cd /volume1/docker/homeloft/bridge/certs
 sudo openssl req -new -newkey rsa:2048 -nodes \
-  -keyout private.key -out home.csr -subj "/CN=homecloud-home"
+  -keyout private.key -out home.csr -subj "/CN=homeloft-home"
 sudo chmod 600 private.key
 ```
 
@@ -80,11 +80,11 @@ tofu apply plan.bin
 
 **Smoke tests**
 - [ ] `curl -s "$(tofu output -raw api_url)/v1/health"` returns `{"ok": true, ...}`.
-- [ ] `aws s3 ls s3://<state-bucket>/homecloud/` now also lists `standalone.tfstate`.
+- [ ] `aws s3 ls s3://<state-bucket>/homeloft/` now also lists `standalone.tfstate`.
 - [ ] `tofu output private_keys` is empty, because you used a CSR.
 
 Note these values for the NAS: `tofu output -raw iot_endpoint` and `tofu output -json thing_names`
-(for example `{"home":"homecloud-home"}`).
+(for example `{"home":"homeloft-home"}`).
 
 ## 4. Certificate to the NAS
 
@@ -97,7 +97,7 @@ scp cert.pem AmazonRootCA1.pem you@nas:/tmp/
 Then on the NAS:
 
 ```sh
-cd /volume1/docker/homecloud/bridge/certs
+cd /volume1/docker/homeloft/bridge/certs
 sudo mv /tmp/cert.pem /tmp/AmazonRootCA1.pem . && sudo rm -f home.csr
 sudo chown -R 10001:10001 . && sudo chmod 700 . && sudo chmod 600 private.key
 ls   # AmazonRootCA1.pem  cert.pem  private.key
@@ -125,11 +125,11 @@ Cognito emails you a temporary password. You'll set a new one at first sign-in i
 lists `admin`.
 
 **Sign-in page branding.** With the default `cognito_branding = true`, the module styles the sign-in page
-like the dashboard: HomeCloud logo, teal buttons, dark theme. It uses Cognito
+like the dashboard: Homeloft logo, teal buttons, dark theme. It uses Cognito
 *managed login*, which needs the pool's **Essentials** tier. Essentials is free for the first 10,000 monthly
 active users and is the default for new pools. To keep AWS's classic hosted UI and the Lite tier, set
 `cognito_branding = false` in the module call. The logo files are in
-`cloud/terraform/modules/homecloud/branding/`. The setting has no effect with `existing_user_pool_id`:
+`cloud/terraform/modules/homeloft/branding/`. The setting has no effect with `existing_user_pool_id`:
 style your own pool in the Cognito console (Managed login → Styles).
 
 ## 6. NAS stack
@@ -141,11 +141,11 @@ Set these values in `.env`:
 |---|---|
 | `HOME_ID` | `home` (must match `home_ids`) |
 | `IOT_ENDPOINT` | `tofu output -raw iot_endpoint` |
-| `IOT_THING_NAME` | `homecloud-home`, from `thing_names` |
+| `IOT_THING_NAME` | `homeloft-home`, from `thing_names` |
 | `HA_TOKEN` | the long-lived token from HA (synology.md step 5) |
 
 **Smoke tests**
-- [ ] `sudo docker logs homecloud-bridge-1` shows `connected to Home Assistant`, `connected to IoT Core`
+- [ ] `sudo docker logs homeloft-bridge-1` shows `connected to Home Assistant`, `connected to IoT Core`
       and `snapshot sent: N entities` with N > 0.
 - [ ] From the deploy machine, the cloud sees the home as online:
   ```sh
@@ -187,13 +187,13 @@ certificate, the DynamoDB table or the user pool.
 
 1. The account needs GitHub's OIDC provider (`token.actions.githubusercontent.com`) once.
 2. In `bootstrap/terraform.tfvars` set `github_repo = "owner/repo"` and apply the bootstrap
-   stack. It creates role `github-actions-homecloud-deploy`, which only `main` of that repo can
-   assume. IAM, S3 and DynamoDB access is limited to `homecloud-*` names. Newer repos use
+   stack. It creates role `github-actions-homeloft-deploy`, which only `main` of that repo can
+   assume. IAM, S3 and DynamoDB access is limited to `homeloft-*` names. Newer repos use
    GitHub's immutable OIDC subject. Run `gh api repos/OWNER/REPO/actions/oidc/customization/sub`,
    and if `use_immutable_subject` is true, set `github_sub_prefix` to the `sub_claim_prefix` it
    prints. Otherwise the role can't be assumed (`Not authorized to perform sts:AssumeRoleWithWebIdentity`).
 3. Copy the stack's gitignored files to where CI reads them:
-   `aws s3 cp examples/standalone/terraform.tfvars s3://<state-bucket>/homecloud/local-files/examples/standalone/terraform.tfvars`
+   `aws s3 cp examples/standalone/terraform.tfvars s3://<state-bucket>/homeloft/local-files/examples/standalone/terraform.tfvars`
    (same for `backend.hcl`). **From now on the S3 copy is what deploys.** Re-upload after you edit
    the local file.
 4. Repo variables: `AWS_DEPLOY_ROLE_ARN` (bootstrap output `deploy_role_arn`) and
@@ -205,13 +205,13 @@ certificate, the DynamoDB table or the user pool.
 **History:** the module keeps history for entities matching `history_entities` (globs, with
 defaults for drive temps, doors, lights, `sun.sun` and NAS containers). Set it to `[]` to turn
 history off. Daily summaries split at local midnight for `history_utc_offset_hours` (a fixed offset, no DST,
-default 0 = UTC). A daily `homecloud-rollup` Lambda runs at 00:15 local. Smoke test after a day:
-`aws lambda invoke --function-name homecloud-rollup /dev/stdout` returns `"rollups": N` with N > 0.
+default 0 = UTC). A daily `homeloft-rollup` Lambda runs at 00:15 local. Smoke test after a day:
+`aws lambda invoke --function-name homeloft-rollup /dev/stdout` returns `"rollups": N` with N > 0.
 
 ## 10. Custom domain (optional)
 
 The web app answers on its CloudFront address (`https://dxxxx.cloudfront.net`) until you give it a
-domain. Use a subdomain, such as `homecloud.example.com`: some DNS hosts can't point a bare domain
+domain. Use a subdomain, such as `homeloft.example.com`: some DNS hosts can't point a bare domain
 at CloudFront. The stack must be in `us-east-1`, which is where CloudFront certificates live.
 
 Set `web_domain` in `terraform.tfvars`. Then pick where its DNS is hosted:
@@ -225,13 +225,13 @@ creates the certificate, validates it, and adds `A`/`AAAA` alias records. The de
    This creates the certificate and prints `web_domain_status = PENDING_VALIDATION` and
    `web_dns_records`, two `CNAME`s. The deploy workflow also shows them on the run's summary page.
 2. Create both `CNAME` records at the DNS host, exactly as printed:
-   - **Certificate validation:** `_xxxx.homecloud.example.com.` → `_yyyy.acm-validations.aws.`
+   - **Certificate validation:** `_xxxx.homeloft.example.com.` → `_yyyy.acm-validations.aws.`
      Keep it: ACM uses it again to renew the certificate every year.
-   - **The site:** `homecloud.example.com.` → `dxxxx.cloudfront.net.`
+   - **The site:** `homeloft.example.com.` → `dxxxx.cloudfront.net.`
    On ClouDNS: open the zone, then **Add new record**, type **CNAME**. **Host** is the name without
-   the zone (e.g. `homecloud`, or `_xxxx.homecloud`), and **Points to** is the value, with its trailing dot.
+   the zone (e.g. `homeloft`, or `_xxxx.homeloft`), and **Points to** is the value, with its trailing dot.
 3. Wait for ACM to validate it, usually a few minutes:
-   `aws acm list-certificates --region us-east-1 --query "CertificateSummaryList[?DomainName=='homecloud.example.com'].Status"`
+   `aws acm list-certificates --region us-east-1 --query "CertificateSummaryList[?DomainName=='homeloft.example.com'].Status"`
    shows `ISSUED`.
 4. Apply again (or re-run the deploy workflow). CloudFront takes on the domain, and
    `web_domain_status` becomes `LIVE`. The CloudFront change takes about 5–10 minutes to roll out.
