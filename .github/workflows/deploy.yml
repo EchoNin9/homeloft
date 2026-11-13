@@ -1,5 +1,8 @@
 name: deploy
 # Push to main that touches AWS infra or the web UI -> tofu apply + publish web.
+# Opt-in: does nothing unless the repo (or your fork) sets AWS_DEPLOY_ROLE_ARN.
+# Logs are kept quiet on purpose: tofu output goes to files, the account ID is masked, and the
+# job prints only change counts, so a public repo's Actions logs don't map your AWS resources.
 # Needs repo variables AWS_DEPLOY_ROLE_ARN (bootstrap output deploy_role_arn) and
 # TOFU_STATE_BUCKET. The stack's gitignored files (terraform.tfvars, backend.hcl) are
 # read from s3://$TOFU_STATE_BUCKET/homecloud/local-files/ (see docs/first-deploy.md).
@@ -31,6 +34,7 @@ env:
 
 jobs:
   deploy:
+    if: vars.AWS_DEPLOY_ROLE_ARN != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,6 +42,8 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+      - name: Mask the AWS account ID in all later log lines
+        run: echo "::add-mask::$(aws sts get-caller-identity --query Account --output text)"
       - uses: opentofu/setup-opentofu@v1
         with:
           tofu_version: 1.10.6
@@ -57,8 +63,12 @@ jobs:
       - name: tofu plan
         working-directory: ${{ env.STACK }}
         run: |
-          tofu init -input=false -backend-config=backend.hcl
-          tofu plan -input=false -no-color -out=tfplan
+          tofu init -input=false -backend-config=backend.hcl > "$RUNNER_TEMP/init.log" 2>&1 \
+            || { tail -n 30 "$RUNNER_TEMP/init.log"; exit 1; }
+          tofu plan -input=false -no-color -out=tfplan > "$RUNNER_TEMP/plan.log" 2>&1 \
+            || { grep -E '^(Error|│)' "$RUNNER_TEMP/plan.log" | head -n 40; exit 1; }
+          tofu show -json tfplan | jq -r '[.resource_changes[]?.change.actions | join("/")]
+            | group_by(.) | map("\(.[0]): \(length)") | join(", ") | "Plan: " + (if . == "" then "no changes" else . end)'
 
       - name: Refuse plans that delete stateful resources
         working-directory: ${{ env.STACK }}
@@ -74,10 +84,13 @@ jobs:
 
       - name: tofu apply
         working-directory: ${{ env.STACK }}
-        run: tofu apply -input=false -no-color tfplan
+        run: |
+          tofu apply -input=false -no-color tfplan > "$RUNNER_TEMP/apply.log" 2>&1 \
+            || { grep -E '^(Error|│)' "$RUNNER_TEMP/apply.log" | head -n 40; exit 1; }
+          grep -E '^Apply complete' "$RUNNER_TEMP/apply.log" || true
 
       - name: Publish web
-        run: ./scripts/deploy-web.sh
+        run: ./scripts/deploy-web.sh --quiet
 
       # Custom domain on an external DNS host: show what to create and where it's at. (Nothing secret:
       # these records are public in DNS once created.)

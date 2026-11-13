@@ -3,7 +3,10 @@
 These instructions are for every coding agent working in this repo (Claude Code, Antigravity,
 Codex and others). `AGENTS.md` is a symlink to this file.
 
-## Branch rules (enforced by repo rulesets)
+## Branch rules
+
+Rulesets enforce these once the repo is public (`scripts/setup-branch-rules.sh`). Until then
+they are on the honour system, so follow them exactly.
 
 - `main` is the default and production branch. **Only `develop` may be merged into `main`**,
   through a PR. The `branch-policy` check fails any other source.
