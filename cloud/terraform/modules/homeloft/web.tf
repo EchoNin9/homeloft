@@ -109,16 +109,22 @@ resource "aws_s3_bucket_policy" "web" {
 # itself, the API and the Cognito domain. Tokens live in localStorage, so CSP is the main guard
 # against an injected script reading them.
 locals {
-  csp_cognito = local.cognito_domain == null ? "" : (
-    startswith(local.cognito_domain, "https://") ? local.cognito_domain : "https://${local.cognito_domain}"
+  # Built from inputs, not from resource attributes: the API's CORS origins and the pool client's
+  # callback URLs both depend on the distribution, so reading them back here would be a cycle.
+  csp_cognito_host = local.create_pool ? "${coalesce(var.cognito_domain_prefix, "${var.name_prefix}-${local.account_id}")}.auth.${local.region}.amazoncognito.com" : var.existing_cognito_domain
+  csp_cognito = local.csp_cognito_host == null ? "" : (
+    startswith(local.csp_cognito_host, "https://") ? local.csp_cognito_host : "https://${local.csp_cognito_host}"
   )
+  # ponytail: any API Gateway in this region; the exact endpoint would need the API to exist first
+  # (cycle above). Serving /v1 through CloudFront would make this 'self'.
+  csp_api = "https://*.execute-api.${local.region}.amazonaws.com"
   csp = join("; ", [
     "default-src 'self'",
     "script-src 'self'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data:",
     "font-src 'self'",
-    "connect-src 'self' ${aws_apigatewayv2_api.this.api_endpoint} ${local.csp_cognito}",
+    "connect-src 'self' ${local.csp_api} ${local.csp_cognito}",
     "form-action 'self' ${local.csp_cognito}",
     "frame-ancestors 'none'",
     "base-uri 'self'",
