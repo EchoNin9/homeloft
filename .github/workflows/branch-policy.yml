@@ -5,6 +5,9 @@ on:
     branches: [main]
     types: [opened, reopened, synchronize, edited]
 
+permissions:
+  contents: read
+
 jobs:
   only-develop-into-main:
     runs-on: ubuntu-latest
