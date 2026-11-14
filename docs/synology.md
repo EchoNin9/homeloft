@@ -139,7 +139,7 @@ Adding it is your call; consider excluding specific locks by glob.
 DSM's DNS Server owns port 53 on the NAS's own addresses, so AdGuard gets its own LAN IP through a macvlan
 network on a **spare NIC**. If it used the NIC that holds the NAS's main IP, it couldn't reach DSM DNS.
 
-1. In `.env`, set `ADGUARD_IP` (a free IP outside DHCP), `ADGUARD_PARENT` (the spare NIC, e.g. `eth3`),
+1. In `.env`, set `ADGUARD_IP` (a free IP outside DHCP), `ADGUARD_PARENT` (the spare NIC, e.g. `eth1`),
    `LAN_SUBNET` and `LAN_GATEWAY`.
 2. `sudo mkdir -p /volume1/docker/homeloft/adguard/{conf,work}`, then
    `sudo docker compose --profile adguard up -d adguard`.
@@ -160,6 +160,11 @@ The `monitor` service sets `sensor.docker_<container>` in HA every 60 s, and the
 cloud like any other sensor. The web dashboard shows them as sensor tiles, plus a red **Service down**
 badge when one isn't `running` or is `unhealthy`. It needs `sensor` in `BRIDGE_ALLOWED_DOMAINS`
 (it is by default).
+
+Neither `monitor` nor `wud` mounts the Docker socket. Both read through `socket-proxy`, which listens
+on `127.0.0.1:2375` only and refuses every write (no create, exec, start or stop). If something else
+on the NAS already uses port 2375, change the published port and `DOCKER_HOST` /
+`WUD_WATCHER_LOCAL_PORT` to match.
 
 Only compose containers (any project) are reported, so a one-off `docker run` doesn't raise a false alarm.
 Compose's temporary `<12 hex>_<name>` copy made during a recreate is skipped too.
