@@ -1,0 +1,34 @@
+# Weekly dependency PRs into develop (never main). Minor/patch updates are grouped per ecosystem.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /web
+    target-branch: develop
+    schedule: { interval: weekly, day: monday }
+    groups:
+      minor-and-patch: { update-types: [minor, patch] }
+
+  - package-ecosystem: pip
+    directories: [/nas/bridge, /cloud]
+    target-branch: develop
+    schedule: { interval: weekly, day: monday }
+    groups:
+      minor-and-patch: { update-types: [minor, patch] }
+
+  - package-ecosystem: docker
+    directory: /nas/bridge
+    target-branch: develop
+    schedule: { interval: weekly, day: monday }
+
+  # Pinned image tags in the NAS stack (floating tags like :stable are watched by wud instead).
+  - package-ecosystem: docker-compose
+    directory: /nas
+    target-branch: develop
+    schedule: { interval: weekly, day: monday }
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule: { interval: weekly, day: monday }
+    groups:
+      actions: { patterns: ["*"] }
