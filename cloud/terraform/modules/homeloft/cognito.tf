@@ -7,6 +7,15 @@ resource "aws_cognito_user_pool" "this" {
   user_pool_tier           = var.cognito_branding ? "ESSENTIALS" : null
   auto_verified_attributes = ["email"]
 
+  # TOTP (authenticator app). ON: managed login runs the setup at first sign-in (var.mfa).
+  mfa_configuration = var.mfa
+  dynamic "software_token_mfa_configuration" {
+    for_each = var.mfa == "OFF" ? [] : [1]
+    content {
+      enabled = true
+    }
+  }
+
   admin_create_user_config {
     allow_admin_create_user_only = true # private install: no self sign-up
   }

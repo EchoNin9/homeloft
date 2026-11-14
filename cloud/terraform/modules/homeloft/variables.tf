@@ -179,3 +179,25 @@ variable "cognito_branding" {
   type        = bool
   default     = true
 }
+
+variable "mfa" {
+  description = "TOTP MFA for the created user pool. ON: managed login walks each user through authenticator setup at first sign-in, then asks for a code every time. OPTIONAL: only users who already enrolled get asked; managed login offers no enrolment. OFF: password only. Ignored with existing_user_pool_id."
+  type        = string
+  default     = "ON"
+  validation {
+    condition     = contains(["OFF", "OPTIONAL", "ON"], var.mfa)
+    error_message = "mfa must be OFF, OPTIONAL or ON."
+  }
+}
+
+variable "api_access_logs" {
+  description = "Write API Gateway access logs (method, route, status, latency, caller IP; no tokens or bodies) to CloudWatch."
+  type        = bool
+  default     = true
+}
+
+variable "log_retention_days" {
+  description = "Retention for the module's CloudWatch log groups that honour it (API access logs)."
+  type        = number
+  default     = 30
+}

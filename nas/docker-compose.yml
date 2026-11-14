@@ -64,7 +64,7 @@ services:
   # DNS ad-blocker on its own LAN IP (macvlan), because DSM's DNS Server already owns :53 on the
   # NAS's addresses. UI and first-run wizard: http://${ADGUARD_IP}:3000. Setup: docs/synology.md.
   # ponytail: macvlan containers can't reach their parent NIC's host IP; that's why the parent is a
-  # spare NIC (eth3), so AdGuard can still forward the local zone to DSM DNS on bond0.
+  # spare NIC (ADGUARD_PARENT), so AdGuard can still forward the local zone to DSM DNS on the main one.
   adguard:
     profiles: [adguard]   # enable with: docker compose --profile adguard up -d
     image: adguard/adguardhome:v0.107.79
@@ -76,18 +76,41 @@ services:
       - ${DATA_ROOT}/adguard/work:/opt/adguardhome/work
     restart: unless-stopped
 
+  # The Docker socket is root-equivalent (a `:ro` mount doesn't change that). monitor and wud only
+  # need to read container and image state, so they talk to this proxy, which refuses every POST
+  # (no create/exec/start/stop) and every API group not switched on below. Loopback only.
+  # ponytail: with CONTAINERS=1 a GET can still read container logs/exports; both clients are fixed
+  # images we run on purpose. Upstream: github.com/Tecnativa/docker-socket-proxy.
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy:v0.4.1
+    environment:
+      CONTAINERS: 1
+      IMAGES: 1
+      INFO: 1
+      EVENTS: 1
+      POST: 0
+    ports:
+      - "127.0.0.1:2375:2375"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+
   # Mirrors each container's state into HA as sensor.docker_<name> (contract.md "NAS container sensors").
-  # ponytail: the Docker socket is root-equivalent; this runs one fixed script. Use a socket proxy if more joins it.
   monitor:
     image: docker:29-cli
-    network_mode: host   # reaches Home Assistant at 127.0.0.1:8123
+    network_mode: host   # reaches Home Assistant at 127.0.0.1:8123 and the socket proxy at :2375
     environment:
       HA_URL: http://127.0.0.1:8123
       HA_TOKEN: ${HA_TOKEN:?set HA_TOKEN in .env}
+      DOCKER_HOST: tcp://127.0.0.1:2375
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./scripts/monitor.sh:/monitor.sh:ro
     entrypoint: ["sh", "/monitor.sh"]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    depends_on: [socket-proxy]
     restart: unless-stopped
 
   # Update checker (What's Up Docker): announces newer images to HA as MQTT `update.*` entities.
@@ -99,6 +122,8 @@ services:
     environment:
       TZ: ${TZ:-UTC}
       WUD_SERVER_ENABLED: "false"
+      WUD_WATCHER_LOCAL_HOST: 127.0.0.1   # the read-only socket proxy, not the raw socket
+      WUD_WATCHER_LOCAL_PORT: 2375
       WUD_WATCHER_LOCAL_CRON: "0 6 * * *"   # daily; keeps Docker Hub rate limits happy
       WUD_TRIGGER_MQTT_HA_URL: mqtt://127.0.0.1:1883
       WUD_TRIGGER_MQTT_HA_USER: wud
@@ -108,8 +133,8 @@ services:
       WUD_AUTH_ADMIN_USER: admin
       WUD_AUTH_ADMIN_PASSWORD: ${WUD_ADMIN_PASSWORD:-}
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${DATA_ROOT}/wud:/store
+    depends_on: [socket-proxy]
     restart: unless-stopped
 
   # Daily config backup of ${DATA_ROOT} into ${DATA_ROOT}/backups via scripts/backup.sh.
@@ -134,7 +159,7 @@ networks:
   lan:
     driver: macvlan
     driver_opts:
-      parent: ${ADGUARD_PARENT:-eth3}
+      parent: ${ADGUARD_PARENT:-eth1}
     ipam:
       config:
         - subnet: ${LAN_SUBNET:-10.0.0.0/24}

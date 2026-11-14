@@ -64,10 +64,29 @@ resource "aws_apigatewayv2_route" "this" {
   authorizer_id      = each.value ? aws_apigatewayv2_authorizer.cognito.id : null
 }
 
+resource "aws_cloudwatch_log_group" "api_access" {
+  count             = var.api_access_logs ? 1 : 0
+  name              = "/aws/apigateway/${var.name_prefix}-api-access"
+  retention_in_days = var.log_retention_days
+  tags              = local.common_tags
+}
+
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.this.id
   name        = "$default"
   auto_deploy = true
+
+  dynamic "access_log_settings" {
+    for_each = var.api_access_logs ? [1] : []
+    content {
+      destination_arn = aws_cloudwatch_log_group.api_access[0].arn
+      format = jsonencode({
+        requestId = "$context.requestId", ip = "$context.identity.sourceIp", time = "$context.requestTimeEpoch",
+        route     = "$context.routeKey", status = "$context.status", latencyMs = "$context.responseLatency",
+        sub       = "$context.authorizer.claims.sub", authError = "$context.authorizer.error",
+      })
+    }
+  }
 
   default_route_settings {
     throttling_burst_limit = 20
