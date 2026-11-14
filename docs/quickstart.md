@@ -22,7 +22,7 @@ Time: about 1–2 hours. Commands assume the repo root unless a `cd` says otherw
       The offset is fixed, with no DST. If your zone changes its clocks, pick the offset you're on
       most of the year. Summaries then split an hour off local midnight for the rest of the year.
 - [ ] Home Assistant isn't running yet, or you'll move an existing install into
-      `/volume1/docker/homeloft/homeassistant`.
+      `/volume1/docker/homeloft/homeassistant` ([Moving an existing install](#moving-an-existing-install)).
 
 ## 1. State bucket (one time per AWS account)
 
@@ -146,7 +146,8 @@ Set these values in `.env`:
 
 **Smoke tests**
 - [ ] `sudo docker logs homeloft-bridge-1` shows `connected to Home Assistant`, `connected to IoT Core`
-      and `snapshot sent: N entities` with N > 0.
+      and `snapshot sent: N entities` with N > 0. If N is 0 on a first start, the bridge reached
+      Home Assistant before HA finished loading: `sudo docker restart homeloft-bridge-1` and check again.
 - [ ] From the deploy machine, the cloud sees the home as online:
   ```sh
   aws dynamodb get-item --table-name "$(tofu output -raw table_name)" \
@@ -165,8 +166,9 @@ This leaves the module-managed `config.json` in the bucket untouched.
 **Smoke tests**
 - [ ] `curl -s "$(cd cloud/terraform/examples/standalone && tofu output -raw web_url)/config.json"`
       shows your `apiUrl`, `userPoolId` and `clientId`.
-- [ ] Open `web_url`, sign in (set your new password), and your home shows as **online** with
-      entities grouped by domain.
+- [ ] Open `web_url` and sign in with the temporary password from the email. You then set a new
+      password and, because the module sets `mfa = "ON"`, scan a QR code with an authenticator app
+      (any TOTP app) and enter its 6-digit code. Your home shows as **online** with entities grouped by domain.
 
 ## 8. End to end (this is M1)
 
@@ -267,6 +269,31 @@ the API role can use, and every decrypt is logged in CloudTrail. It needs a smal
 
 boto3 only, so the Lambda zip packaging doesn't change.
 
+## Moving an existing install
+
+Already running Home Assistant (and maybe Mosquitto, Zigbee2MQTT or AdGuard) from another compose
+project? Keep their data and swap the stack around them. Prepare everything first, so the downtime
+is only the swap (about 2 minutes):
+
+1. Do steps 1–5 as written, but put the new key in a side folder (e.g. `bridge/certs.new`) and the
+   new stack in `stack.new`. Build the bridge image ahead of time (synology.md step 5, legacy builder).
+2. Copy your old `.env` into `stack.new/.env` and change `DATA_ROOT`, `IOT_THING_NAME` and `IOT_ENDPOINT`.
+   Keys like `HA_TOKEN` and the AdGuard network settings carry over.
+3. Take a backup, then stop the old project **including its profiled services**. A plain
+   `docker compose down` leaves `adguard` and `zigbee2mqtt` (and AdGuard's LAN network) running:
+   ```sh
+   sudo docker compose --profile adguard --profile zigbee down
+   ```
+4. Move the data folder to `/volume1/docker/homeloft` (keep `homeassistant/`, `mosquitto/`,
+   `zigbee2mqtt/`, `adguard/`, `backups/`), put `stack.new` and `certs.new` in place, and
+   `sudo mkdir -p /volume1/docker/homeloft/wud`.
+5. `sudo docker compose --profile adguard up -d --no-build` (add `--profile zigbee` if you use it).
+   HA keeps its config, pairings and the MQTT login, so the existing token keeps working.
+
+History and dashboard prefs live in DynamoDB. They don't move with the NAS. To carry them from an
+older deployment, export the old table with `aws dynamodb scan` before tearing it down. Prefs rows are
+keyed by `HMAC(PREFS_HMAC_KEY, sub)`, so they have to be re-keyed for the new user and key.
+
 ## Troubleshooting
 
 | Symptom | Usual cause | Fix |
@@ -277,7 +304,9 @@ boto3 only, so the Lambda zip packaging doesn't change.
 | Bridge: TLS or connection refused to IoT | Client id isn't the thing name, wrong endpoint, or wrong file permissions | Check `IOT_THING_NAME` and `IOT_ENDPOINT`; certificates must be readable by UID 10001 |
 | Bridge: connects, then drops every few seconds | Two bridges using the same client id | Run only one bridge per home |
 | Bridge: `auth_invalid` from HA | Token pasted with whitespace, or revoked | Create a new long-lived token |
-| `snapshot sent: 0 entities` | Domain filter excludes everything | Check `BRIDGE_ALLOWED_DOMAINS` and `BRIDGE_ENTITY_EXCLUDE` |
+| `snapshot sent: 0 entities` | Domain filter excludes everything, or HA was still loading when the bridge connected | Check `BRIDGE_ALLOWED_DOMAINS` and `BRIDGE_ENTITY_EXCLUDE`; otherwise restart the bridge |
+| `compose up`: `Pool overlaps with other one on this address space` | An older project's AdGuard macvlan network still exists | Stop that project with its profiles (`--profile adguard down`), or `docker network rm` the old network |
+| `compose up`: `Bind mount failed: …/wud does not exist` | The `wud` data folder wasn't created | `sudo mkdir -p /volume1/docker/homeloft/wud` |
 | META `online` missing | The IoT rule isn't firing | CloudWatch log group of the topic rule error action, and the ingest Lambda logs |
 | Login: `redirect_mismatch` | The web URL isn't in the client's callback URLs | Re-apply; custom domains go in `web_callback_urls` |
 | UI shows 403 | User isn't in the `admin` group, or a stale token from before the group was added | Add to the group, then sign out and back in |
