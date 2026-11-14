@@ -21,7 +21,7 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md).
 | NAS → AWS | state batches, command acks, online status | A per-home X.509 certificate. The IoT policy pins the client ID to the Thing name and limits publish/subscribe to `homeloft/{homeId}/…` for that home. Created from a CSR on the NAS, so the private key never leaves it and never reaches OpenTofu state. |
 | AWS → NAS | commands | Two allowlists: the API's `allowed_services` and the bridge's own `BRIDGE_ALLOWED_SERVICES` and entity filter. The bridge also rejects stale (>60 s), future-dated, replayed, malformed or multi-target commands. A compromised cloud side still can't call a service the bridge doesn't allow. |
 | Browser → API | reads, commands, view prefs | A Cognito JWT checked by API Gateway (issuer + audience), then the caller must be in an `allowed_groups` group. Home IDs, entity IDs, services and body sizes are validated in the Lambda. 10 rps / burst 20 per stage. |
-| Browser ↔ SPA | the app and its tokens | CloudFront with Origin Access Control (the bucket is private) and HTTPS only. A response headers policy sets CSP (`self` + the API + the Cognito domain only), HSTS, nosniff and `frame-ancestors 'none'`. |
+| Browser ↔ SPA | the app and its tokens | CloudFront with Origin Access Control (the bucket is private) and HTTPS only. A response headers policy sets CSP (`self`, your Cognito domain and API Gateway hosts in the stack's region), HSTS, nosniff and `frame-ancestors 'none'`. |
 
 ## Defaults that matter
 
@@ -57,6 +57,9 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md).
   stack. Per-home permissions are not built. Run one stack per household if that matters.
 - **Tokens in `localStorage`.** This is standard for a SPA with PKCE. CSP is the mitigation: a
   successful XSS would still expose a 1-hour token.
+- **CSP allows any API Gateway host in the region** (`https://*.execute-api.<region>.amazonaws.com`),
+  not just yours. The exact endpoint would create a dependency cycle (API CORS ↔ CloudFront).
+  Serving `/v1` through CloudFront would let `connect-src` be `'self'`; that's on the backlog.
 - **The deploy role is broad.** IAM, S3 and DynamoDB are scoped to the `name_prefix`, but API
   Gateway, IoT, Cognito, CloudFront, Lambda, Logs, ACM and EventBridge are `*`, because they lack
   useful resource-level scoping at create time. Keep the trust pinned to your repo and branch.
