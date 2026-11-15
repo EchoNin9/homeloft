@@ -5,6 +5,10 @@ All notable changes to Homeloft. Versions follow [SemVer](https://semver.org); e
 
 ## [Unreleased]
 
+- **Web:** React 19.3 and TypeScript 7 (the native compiler). No code changes were needed; the dashboard was checked by hand
+  (toggles, brightness, colour, thermostat, history, search, failing-command rollback) with a clean console under StrictMode.
+  The bundle is about 23 kB larger gzipped (React 19). Embedding hosts on React 18 still work.
+
 ## [0.1.2] - 2026-11-15
 
 - **Bridge:** sends a fresh snapshot when Home Assistant fires `homeassistant_started`. A bridge that connects while
