@@ -1,71 +1,128 @@
-# Homeloft
+<p align="center">
+  <img src="web/public/favicon.svg" width="72" height="72" alt="">
+</p>
 
-**Home Assistant on your Synology, with your own cloud dashboard and API on AWS.**
+<h1 align="center">Homeloft</h1>
 
-- Home Assistant runs locally in Docker, so automations keep working if the internet goes down.
-- A small **bridge** container connects *outbound* to AWS IoT Core. You open no ports and don't need port forwarding.
-- The AWS side is an **OpenTofu module** (also works with Terraform), with remote state in S3: an HTTP API (Cognito JWT), DynamoDB, IoT Core and an optional React dashboard on S3/CloudFront.
-- **Built to embed.** Drop the module into an existing stack and point it at an existing Cognito pool, mount the React component in your own app, or just call the API.
+<p align="center">
+  <strong>Home Assistant on your Synology, with your own cloud dashboard and API on AWS.</strong><br>
+  No open ports. No subscription. About US$1–3 a month, on infrastructure you own.
+</p>
 
-```
-Home Assistant ⇄ bridge ──MQTT/TLS (outbound)──► AWS IoT Core ─► Lambda ─► DynamoDB ◄─ API (Cognito) ◄─ web / your app
-```
+<p align="center">
+  <a href="https://github.com/EchoNin9/homeloft/actions/workflows/ci.yml"><img src="https://github.com/EchoNin9/homeloft/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="https://github.com/EchoNin9/homeloft/releases/latest"><img src="https://img.shields.io/github/v/release/EchoNin9/homeloft?color=0c7385" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0c7385" alt="MIT license"></a>
+  <a href="https://homeloft.dev"><img src="https://img.shields.io/badge/docs-homeloft.dev-0c7385" alt="Docs"></a>
+</p>
 
-The full message and API contract is in [docs/contract.md](docs/contract.md).
+<p align="center">
+  <a href="https://homeloft.dev/demo/"><strong>Try the live demo</strong></a> ·
+  <a href="docs/quickstart.md">Quickstart</a> ·
+  <a href="https://homeloft.dev">Docs</a> ·
+  <a href="docs/architecture.md">Architecture</a>
+</p>
 
-## Repo layout
+<p align="center">
+  <a href="https://homeloft.dev/demo/"><img src="docs/assets/dashboard.png" alt="The Homeloft dashboard: lights, switches, a thermostat and covers, with alerts for an open door, a hot drive and available updates" width="900"></a>
+</p>
 
-| Path | What it is |
+## Why Homeloft
+
+You run Home Assistant at home because you want your house to keep working without someone else's
+cloud. But you still want to check on the house from your phone, and maybe call it from your own apps.
+Homeloft adds that cloud half **without opening a single port at home**, as code you deploy
+into your own AWS account.
+
+## Features
+
+- **Local first.** Home Assistant runs on the NAS in Docker. Automations keep working when the internet is down.
+- **No inbound connections.** A small bridge container dials *out* to AWS IoT Core over mutual TLS. No port
+  forwarding, no reverse proxy, no tunnel into Home Assistant.
+- **A real dashboard.** Lights with brightness and colour, thermostats, covers, scenes, sensors, history,
+  areas, groups and saved searches, in light and dark. Changes show instantly and roll back if the house says no.
+- **Safe by default.** Commands pass two allowlists, one in the cloud and one at home, and `lock.unlock` is
+  in neither. Stale and replayed commands are rejected. TOTP MFA is on by default. [Security model](docs/security.md)
+- **Infrastructure as code.** One OpenTofu module (Terraform works too): HTTP API, Cognito, DynamoDB, IoT Core
+  and an optional CloudFront site on your own domain. Deploy from your laptop or from GitHub Actions.
+- **Built to embed.** Drop the module into an existing stack with your existing Cognito pool, mount
+  `<HomeloftDashboard>` in your React app, or call the [HTTP API](docs/contract.md#http-api-v1-cognito-jwt-on-every-route-except-v1health) from anything.
+- **Batteries for the NAS.** Optional Zigbee2MQTT, AdGuard Home, container health sensors, update notices
+  and daily backups, with every [Synology quirk](docs/synology.md#synology-gotchas) we hit written down.
+
+## How it works
+
+<p align="center">
+  <img src="docs/assets/architecture.svg" alt="The bridge on the NAS connects outbound to AWS IoT Core; the browser calls the API with a Cognito token; commands travel back over the same outbound connection" width="900">
+</p>
+
+Home Assistant talks to the bridge over a local WebSocket. The bridge publishes state to IoT Core and receives
+commands on the same outbound connection. Lambdas store state in DynamoDB and serve the API. More in
+[Architecture](docs/architecture.md); the wire format is in the [contract](docs/contract.md).
+
+## Quickstart
+
+You need an AWS account, a Synology NAS (or any Docker host) for Home Assistant, and OpenTofu 1.10+.
+Budget about an hour for the first deploy.
+
+1. **Cloud:** create the state bucket (`cloud/terraform/bootstrap`), then `tofu apply` in `cloud/terraform/examples/standalone`.
+2. **NAS:** make a key and CSR on the NAS, put the certificate in place, fill in `.env` and start the Compose project.
+3. **Web:** run `./scripts/deploy-web.sh`, create your user and sign in.
+
+**Follow the full [Quickstart](docs/quickstart.md)**: it has a smoke test after every step.
+No AWS yet? `cd web && npm ci && npm run dev:mock` runs the dashboard on fake data, or open the [demo](https://homeloft.dev/demo/).
+
+## Documentation
+
+| | |
 |---|---|
-| `nas/` | Docker Compose stack: Home Assistant, Mosquitto, Zigbee2MQTT (optional), bridge |
-| `cloud/terraform/modules/homeloft` | Reusable Terraform module |
-| `cloud/terraform/examples/` | `standalone` and `existing-cognito` deployments |
-| `cloud/lambdas/` | Ingest and API Lambdas (Python 3.12, boto3 only) |
-| `web/` | React dashboard, embeddable `<HomeloftDashboard>` component and dependency-free `HomeloftClient` |
-| `docs/` | Contract, Synology setup, integration recipes, [mobile app plan](docs/mobile.md) |
+| [Quickstart](docs/quickstart.md) | First deploy, end to end |
+| [Synology guide](docs/synology.md) | The NAS stack on DSM 7.2, with gotchas |
+| [Configuration](docs/configuration.md) | Every module input and output, and every `.env` key |
+| [Upgrading](docs/upgrading.md) · [Troubleshooting](docs/troubleshooting.md) | Day two |
+| [Architecture](docs/architecture.md) · [Contract](docs/contract.md) · [Security model](docs/security.md) | How it fits together, and why |
+| [Integrating](docs/integrate.md) | The module in an existing stack, the API from your apps, cost |
+| [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md) · [Releasing](docs/releasing.md) | The project |
 
-## Quick start
+## FAQ
 
-**First time? Follow [docs/quickstart.md](docs/quickstart.md)**, which has a smoke test at every step.
+**Why not Nabu Casa (Home Assistant Cloud)?**
+For most people Nabu Casa is the better choice, and we recommend it if you want zero ops. It gives you secure
+remote access to the full Home Assistant UI, voice assistant integrations and more, set up in minutes,
+and your subscription funds Home Assistant's development. Homeloft is for people who *want* to own the cloud
+half: run it in their own AWS account, define it as code, build their own apps on a documented API, or
+embed the dashboard in something they already run. It is a smaller dashboard, not the full HA UI, and
+you maintain it. If none of that appeals, use Nabu Casa.
 
-1. **Cloud:** bootstrap the S3 state bucket (`cloud/terraform/bootstrap`), then `tofu init -backend-config=backend.hcl && tofu apply`
-   in `cloud/terraform/examples/standalone`.
-2. **NAS:** follow [docs/synology.md](docs/synology.md). In short: copy `nas/` to the NAS, fill
-   in `.env`, drop the certificates in place, and create a Container Manager project from
-   `docker-compose.yml`.
-3. **Web:** run `./scripts/deploy-web.sh`. To try the UI without AWS, run `cd web && npm run dev:mock`.
+**Does it need a Synology?**
+No. The NAS side is a plain Docker Compose project. The docs are written for Synology DSM 7.2 because that is
+where Homeloft runs every day, and DSM has quirks worth writing down. Any Linux host with Docker works.
 
-## Security model
+**What happens when the internet or AWS is down?**
+Home Assistant keeps running every automation locally. The dashboard shows the home as offline until the bridge
+reconnects, which it does by itself with backoff.
 
-- Each home gets its own X.509 certificate. Its IoT policy only allows that home's topics.
-- Commands are checked against an allowlist twice: by the API and again by the bridge.
-  `lock.unlock` is **off by default**.
-- The bridge rejects stale (>60 s), future-dated and replayed commands.
-- If you let Terraform generate the private key, it is stored in the S3 state. Pass a CSR
-  (`device_csrs`) to keep the key off AWS entirely, or use encrypted remote state.
-- TOTP MFA is required by default, the SPA ships with a strict Content-Security-Policy, and the
-  NAS containers that read Docker state go through a read-only socket proxy.
+**What does it cost?**
+About US$1–3 a month for one home at typical use: IoT messages, Lambda, on-demand DynamoDB and CloudFront.
+The assumptions are in [Integrating: cost](docs/integrate.md#cost-estimate-one-home).
 
-Full model, defaults and accepted risks: [docs/security.md](docs/security.md). To report a
-vulnerability: [SECURITY.md](SECURITY.md).
+**Can the cloud unlock my door?**
+Only if you allow it in two places: the module's `allowed_services` and the bridge's `BRIDGE_ALLOWED_SERVICES`.
+Both leave out `lock.unlock`, alarms and scripts by default. Because the bridge checks its own list, a compromised
+AWS account still can't call a service the house doesn't allow.
 
-## Cost
+**Terraform or OpenTofu?**
+Both. The module avoids OpenTofu-only syntax. The examples use S3 native state locking, which needs version 1.10 or later of either.
 
-About US$1–3/month for one home at typical usage (IoT messages, Lambda, on-demand DynamoDB,
-CloudFront). See [docs/integrate.md](docs/integrate.md#cost) for the assumptions.
-
-## Mobile apps
-
-Android and iOS apps are planned as a single Expo (React Native) app that reuses
-`HomeloftClient`. They are deferred until the web UI is live and connected to the on-prem
-stack (milestone M1). See
-[docs/mobile.md](docs/mobile.md).
+**Mobile apps?**
+Planned as one Expo app for Android and iOS, reusing the dashboard's API client. See the [mobile plan](docs/mobile.md).
 
 ## Contributing
 
-`main` is production and only accepts merges from `develop`. Open PRs against `develop`.
-Agents should read [CLAUDE.md](CLAUDE.md), which is also available as `AGENTS.md`.
+PRs are welcome against `develop`. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[Code of Conduct](CODE_OF_CONDUCT.md) first. Coding agents: see [CLAUDE.md](CLAUDE.md) (also `AGENTS.md`).
+Report security issues through [SECURITY.md](SECURITY.md), not public issues.
 
 ## License
 
-MIT
+[MIT](LICENSE)
