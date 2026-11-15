@@ -39,7 +39,7 @@ services:
 
   bridge:
     build: ./bridge
-    image: homeloft-bridge:0.1.1
+    image: homeloft-bridge:0.1.2
     labels: [wud.watch=false]   # built locally from this repo; nothing to check
     network_mode: host   # reaches Home Assistant at 127.0.0.1:8123
     environment:
