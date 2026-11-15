@@ -117,7 +117,7 @@ services:
   # Notify only: no update trigger is configured and its web UI/API is off, so nothing here can
   # change a container. Upgrade by hand (docs/synology.md "Upgrading").
   wud:
-    image: getwud/wud:9.6.0
+    image: getwud/wud:9.8.0
     network_mode: host   # reaches Mosquitto at 127.0.0.1:1883
     environment:
       TZ: ${TZ:-UTC}
