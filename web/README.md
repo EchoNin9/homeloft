@@ -1,6 +1,6 @@
 # Homeloft web
 
-React 18 + Vite 5 + TypeScript dashboard for Homeloft, plus a dependency-free API client you can embed in other apps. The HTTP API it speaks is defined in `../docs/contract.md`.
+React 19 + Vite 8 + TypeScript 7 dashboard for Homeloft, plus a dependency-free API client you can embed in other apps. The HTTP API it speaks is defined in `../docs/contract.md`.
 
 ```
 src/client/      HomeloftClient (no React, no deps) - copy or import anywhere
@@ -42,7 +42,7 @@ If the file is missing or invalid the app shows a setup screen instead of failin
 
 ## Embedding the dashboard
 
-Copy or import `src/client`, `src/components` (and `src/auth` if you want the built-in login) into your SPA:
+Copy or import `src/client`, `src/components` (and `src/auth` if you want the built-in login) into your SPA. The components use no React 19-only APIs, so a React 18 or 19 host app works:
 
 ```tsx
 import { HomeloftClient } from './homeloft/client';
