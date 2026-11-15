@@ -1,4 +1,4 @@
-# HomeCloud
+# Homeloft
 
 **Home Assistant on your Synology, with your own cloud dashboard and API on AWS.**
 
@@ -18,15 +18,15 @@ The full message and API contract is in [docs/contract.md](docs/contract.md).
 | Path | What it is |
 |---|---|
 | `nas/` | Docker Compose stack: Home Assistant, Mosquitto, Zigbee2MQTT (optional), bridge |
-| `cloud/terraform/modules/homecloud` | Reusable Terraform module |
+| `cloud/terraform/modules/homeloft` | Reusable Terraform module |
 | `cloud/terraform/examples/` | `standalone` and `existing-cognito` deployments |
 | `cloud/lambdas/` | Ingest and API Lambdas (Python 3.12, boto3 only) |
-| `web/` | React dashboard, embeddable `<HomeCloudDashboard>` component and dependency-free `HomeCloudClient` |
+| `web/` | React dashboard, embeddable `<HomeloftDashboard>` component and dependency-free `HomeloftClient` |
 | `docs/` | Contract, Synology setup, integration recipes, [mobile app plan](docs/mobile.md) |
 
 ## Quick start
 
-**First time? Follow [docs/first-deploy.md](docs/first-deploy.md)**, which has a smoke test at every step.
+**First time? Follow [docs/quickstart.md](docs/quickstart.md)**, which has a smoke test at every step.
 
 1. **Cloud:** bootstrap the S3 state bucket (`cloud/terraform/bootstrap`), then `tofu init -backend-config=backend.hcl && tofu apply`
    in `cloud/terraform/examples/standalone`.
@@ -43,6 +43,11 @@ The full message and API contract is in [docs/contract.md](docs/contract.md).
 - The bridge rejects stale (>60 s), future-dated and replayed commands.
 - If you let Terraform generate the private key, it is stored in the S3 state. Pass a CSR
   (`device_csrs`) to keep the key off AWS entirely, or use encrypted remote state.
+- TOTP MFA is required by default, the SPA ships with a strict Content-Security-Policy, and the
+  NAS containers that read Docker state go through a read-only socket proxy.
+
+Full model, defaults and accepted risks: [docs/security.md](docs/security.md). To report a
+vulnerability: [SECURITY.md](SECURITY.md).
 
 ## Cost
 
@@ -52,7 +57,7 @@ CloudFront). See [docs/integrate.md](docs/integrate.md#cost) for the assumptions
 ## Mobile apps
 
 Android and iOS apps are planned as a single Expo (React Native) app that reuses
-`HomeCloudClient`. They are deferred until the web UI is live and connected to the on-prem
+`HomeloftClient`. They are deferred until the web UI is live and connected to the on-prem
 stack (milestone M1). See
 [docs/mobile.md](docs/mobile.md).
 

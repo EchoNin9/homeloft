@@ -17,7 +17,7 @@ const e = (entity_id: string, state: string, attributes: Record<string, unknown>
   last_changed: now(),
 });
 
-/** Dev-only fake of the homecloud HTTP API (docs/contract.md). Run with `npm run dev:mock`. */
+/** Dev-only fake of the homeloft HTTP API (docs/contract.md). Run with `npm run dev:mock`. */
 export function mockApiPlugin(): Plugin {
   const homes: Record<string, { online: boolean; lastSeenTs: number; entities: Map<string, E> }> = {
     'main-house': {
@@ -28,7 +28,7 @@ export function mockApiPlugin(): Plugin {
           e('light.kitchen', 'on', { brightness: 180, supported_color_modes: ['brightness'] }),
           e('light.living_room', 'off', { brightness: 120, supported_color_modes: ['brightness'] }),
           e('light.hallway', 'on', { supported_color_modes: ['onoff'] }),
-          e('light.reading_lamp', 'on', { brightness: 200, supported_color_modes: ['color_temp', 'hs'], color_mode: 'hs', rgb_color: [255, 96, 64], min_color_temp_kelvin: 2000, max_color_temp_kelvin: 6500, homecloud_area: 'Living room' }),
+          e('light.reading_lamp', 'on', { brightness: 200, supported_color_modes: ['color_temp', 'hs'], color_mode: 'hs', rgb_color: [255, 96, 64], min_color_temp_kelvin: 2000, max_color_temp_kelvin: 6500, homeloft_area: 'Living room' }),
           e('light.flaky_bulb', 'off', { friendly_name: 'Flaky bulb (always fails)', supported_color_modes: ['onoff'] }),
           e('switch.coffee_maker', 'off'),
           e('switch.garden_pump', 'on'),
@@ -42,19 +42,19 @@ export function mockApiPlugin(): Plugin {
           e('sensor.living_room_humidity', '48', { unit_of_measurement: '%', device_class: 'humidity' }),
           e('sensor.power_usage', '412', { unit_of_measurement: 'W' }),
           e('binary_sensor.front_door', 'off', { device_class: 'door' }),
-          e('update.wud_container_local_homecloud_adguard_1', 'on', { title: 'homecloud-adguard-1', installed_version: 'v0.107.79', latest_version: 'v0.107.80' }),
-          e('update.wud_container_local_homecloud_homeassistant_1', 'on', { title: 'homecloud-homeassistant-1', installed_version: 'stable', latest_version: 'sha256:21935614aa' }),
+          e('update.wud_container_local_homeloft_adguard_1', 'on', { title: 'homeloft-adguard-1', installed_version: 'v0.107.79', latest_version: 'v0.107.80' }),
+          e('update.wud_container_local_homeloft_homeassistant_1', 'on', { title: 'homeloft-homeassistant-1', installed_version: 'stable', latest_version: 'sha256:21935614aa' }),
           e('update.nas_dsm_update', 'on', { friendly_name: 'NAS DSM update', installed_version: 'DSM 7.2.2-72806', latest_version: 'DSM 7.2.2-72806 Update 1' }),
-          e('update.wud_container_local_homecloud_mosquitto_1', 'off', { title: 'homecloud-mosquitto-1', installed_version: '2', latest_version: '2' }),
-          e('sun.sun', 'above_horizon', { friendly_name: 'Sun', homecloud_latitude: 43.65, homecloud_longitude: -79.38 }),
+          e('update.wud_container_local_homeloft_mosquitto_1', 'off', { title: 'homeloft-mosquitto-1', installed_version: '2', latest_version: '2' }),
+          e('sun.sun', 'above_horizon', { friendly_name: 'Sun', homeloft_latitude: 43.65, homeloft_longitude: -79.38 }),
           { ...e('binary_sensor.back_door', 'on', { device_class: 'door', friendly_name: 'Back door' }), last_changed: new Date(Date.now() - 20 * 60_000).toISOString() },
           e('sensor.nas_drive_1_temperature', '54', { device_class: 'temperature', unit_of_measurement: '°C', friendly_name: 'NAS (Drive 1) Temperature' }),
           e('sensor.nas_drive_2_temperature', '38', { device_class: 'temperature', unit_of_measurement: '°C', friendly_name: 'NAS (Drive 2) Temperature' }),
           e('binary_sensor.motion_hall', 'on', { device_class: 'motion' }),
           e('sensor.nas_drive_7_temperature', '44', { device_class: 'temperature', unit_of_measurement: '°C', friendly_name: 'NAS (Drive 7) Temperature' }),
-          e('sensor.docker_homecloud_bridge_1', 'running', { friendly_name: 'homecloud-bridge-1', icon: 'mdi:docker', image: 'homecloud-bridge:0.1.0', health: null }),
+          e('sensor.docker_homeloft_bridge_1', 'running', { friendly_name: 'homeloft-bridge-1', icon: 'mdi:docker', image: 'homeloft-bridge:0.1.0', health: null }),
           e('switch.kitchen_tv_do_not_disturb', 'off', { friendly_name: 'Kitchen TV yes Do not disturb' }),
-          e('light.desk', 'on', { friendly_name: 'Desk Light', brightness: 125, supported_color_modes: ['brightness'], homecloud_area: 'Office' }),
+          e('light.desk', 'on', { friendly_name: 'Desk Light', brightness: 125, supported_color_modes: ['brightness'], homeloft_area: 'Office' }),
         ].map((x) => [x.entity_id, x]),
       ),
     },
@@ -99,7 +99,7 @@ export function mockApiPlugin(): Plugin {
   }
 
   return {
-    name: 'homecloud-mock-api',
+    name: 'homeloft-mock-api',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const url = new URL(req.url ?? '/', 'http://x');

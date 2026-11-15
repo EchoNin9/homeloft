@@ -3,10 +3,10 @@ import json
 from types import SimpleNamespace
 
 from conftest import NOW, SERVICES, cmd
-from homecloud_bridge.backoff import MAX_DELAY, backoff_delay
-from homecloud_bridge.config import Config
-from homecloud_bridge.ha import HAError
-from homecloud_bridge.main import Bridge
+from homeloft_bridge.backoff import MAX_DELAY, backoff_delay
+from homeloft_bridge.config import Config
+from homeloft_bridge.ha import HAError
+from homeloft_bridge.main import Bridge
 from pathlib import Path
 
 
@@ -70,7 +70,7 @@ async def test_garbage_command_publishes_nothing():
 
 
 async def test_state_changes_coalesce(monkeypatch):
-    import homecloud_bridge.main as m
+    import homeloft_bridge.main as m
     monkeypatch.setattr(m, "DEBOUNCE_S", 0.02)
     b, pub, _ = make_bridge()
     b.iot.__class__.connected = property(lambda self: True)  # noqa: pretend online
@@ -91,7 +91,7 @@ def _state(eid, st="on"):
 
 
 async def _flush(b, monkeypatch):
-    import homecloud_bridge.main as m
+    import homeloft_bridge.main as m
     monkeypatch.setattr(m, "DEBOUNCE_S", 0.02)
     monkeypatch.setattr(type(b.iot), "connected", property(lambda self: True))
     task = asyncio.create_task(b.flusher())

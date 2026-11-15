@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createAuth, type Auth } from './auth';
-import { HomeCloudClient } from './client';
-import { HomeCloudDashboard } from './components';
+import { HomeloftClient } from './client';
+import { HomeloftDashboard } from './components';
 import { loadConfig, type AppConfig } from './config';
 import './app.css';
 
@@ -55,7 +55,7 @@ export function App({ getToken: externalGetToken }: AppProps) {
   const client = useMemo(
     () =>
       cfg
-        ? new HomeCloudClient({
+        ? new HomeloftClient({
             apiUrl: cfg.apiUrl,
             getToken: externalGetToken ?? (auth ? () => auth.getToken() : async () => 'mock'),
           })
@@ -69,7 +69,7 @@ export function App({ getToken: externalGetToken }: AppProps) {
     case 'no-config':
       return (
         <main className="app-center">
-          <h1>HomeCloud isn't configured</h1>
+          <h1>Homeloft isn't configured</h1>
           <p>The app couldn't load a valid <code>/config.json</code>: {phase.reason}.</p>
           <p>
             Copy <code>config.example.json</code> to <code>config.json</code> next to <code>index.html</code> and fill in your
@@ -88,7 +88,7 @@ export function App({ getToken: externalGetToken }: AppProps) {
     case 'signed-out':
       return (
         <main className="app-center">
-          <h1>HomeCloud</h1>
+          <h1>Homeloft</h1>
           <p>Sign in to see your homes.</p>
           <button type="button" className="app-btn" onClick={() => auth?.login()}>Sign in</button>
           <button type="button" className="app-link" onClick={() => auth?.login('forgotPassword')}>Forgot password?</button>
@@ -96,7 +96,7 @@ export function App({ getToken: externalGetToken }: AppProps) {
       );
     case 'ready':
       return (
-        client && <HomeCloudDashboard client={client} onSignOut={auth ? () => auth.logout() : undefined} />
+        client && <HomeloftDashboard client={client} onSignOut={auth ? () => auth.logout() : undefined} />
       );
   }
 }

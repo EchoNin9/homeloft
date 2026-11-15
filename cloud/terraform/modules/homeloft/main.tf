@@ -33,5 +33,5 @@ locals {
   # Their custom-scheme redirects are registered with Cognito but never used as CORS origins.
   auth_redirect_urls = concat(local.web_urls, var.native_redirect_uris)
 
-  common_tags = merge({ "homecloud" = var.name_prefix }, var.tags)
+  common_tags = merge({ "homeloft" = var.name_prefix }, var.tags)
 }

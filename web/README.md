@@ -1,11 +1,11 @@
-# HomeCloud web
+# Homeloft web
 
-React 18 + Vite 5 + TypeScript dashboard for HomeCloud, plus a dependency-free API client you can embed in other apps. The HTTP API it speaks is defined in `../docs/contract.md`.
+React 18 + Vite 5 + TypeScript dashboard for Homeloft, plus a dependency-free API client you can embed in other apps. The HTTP API it speaks is defined in `../docs/contract.md`.
 
 ```
-src/client/      HomeCloudClient (no React, no deps) - copy or import anywhere
+src/client/      HomeloftClient (no React, no deps) - copy or import anywhere
 src/auth/        Cognito Hosted UI auth-code + PKCE (no Amplify)
-src/components/  <HomeCloudDashboard /> (+ dashboard.css)
+src/components/  <HomeloftDashboard /> (+ dashboard.css)
 src/App.tsx      standalone shell: config.json -> login -> dashboard
 mock/            dev-only fake API (vite plugin)
 ```
@@ -45,18 +45,18 @@ If the file is missing or invalid the app shows a setup screen instead of failin
 Copy or import `src/client`, `src/components` (and `src/auth` if you want the built-in login) into your SPA:
 
 ```tsx
-import { HomeCloudClient } from './homecloud/client';
-import { HomeCloudDashboard } from './homecloud/components';
+import { HomeloftClient } from './homeloft/client';
+import { HomeloftDashboard } from './homeloft/components';
 
-const client = new HomeCloudClient({
+const client = new HomeloftClient({
   apiUrl: 'https://abc.execute-api.us-east-1.amazonaws.com',
   getToken: async () => myCognitoSession.idToken, // host app's existing session
 });
 
-<HomeCloudDashboard client={client} homeId="main-house" />  // homeId optional -> shows a picker
+<HomeloftDashboard client={client} homeId="main-house" />  // homeId optional -> shows a picker
 ```
 
-Props: `client` (required), `homeId` (pin a home), `pollMs` (default 5000). Styles ship in `dashboard.css`, imported by the component and scoped under `.hc-dash`; theme it by overriding the `--hc-*` CSS variables. Light/dark follows `prefers-color-scheme`. The standalone app also accepts a `getToken` prop (`<App getToken={...} />`) to skip the built-in login.
+Props: `client` (required), `homeId` (pin a home), `pollMs` (default 5000). Styles ship in `dashboard.css`, imported by the component and scoped under `.hl-dash`; theme it by overriding the `--hl-*` CSS variables. Light/dark follows `prefers-color-scheme`. The standalone app also accepts a `getToken` prop (`<App getToken={...} />`) to skip the built-in login.
 
 Behaviour: polls every 5 s while the tab is visible (pauses when hidden, refreshes on return, exponential backoff up to 60 s on errors); toggles, brightness and thermostat changes are optimistic and revert with a toast if the command fails; controls are disabled while a home is offline.
 
@@ -65,9 +65,9 @@ Behaviour: polls every 5 s while the tab is visible (pauses when hidden, refresh
 `src/client` has no dependencies and uses the global `fetch` (or pass `fetch`).
 
 ```ts
-import { HomeCloudClient, HomeCloudError } from './client';
+import { HomeloftClient, HomeloftError } from './client';
 
-const c = new HomeCloudClient({ apiUrl, getToken });
+const c = new HomeloftClient({ apiUrl, getToken });
 const [home] = await c.listHomes();
 const { entities } = await c.listEntities(home.homeId, { domain: 'light' });
 const { id } = await c.sendCommand(home.homeId, {
@@ -78,6 +78,6 @@ if (result.status === 'error') console.warn(result.error); // e.g. "not_allowed:
 ```
 
 - `health()` is the only call that sends no `Authorization` header.
-- Non-2xx responses throw `HomeCloudError` with `status` and `code` (the contract's `error` string, or `http_<status>`). Network failures are `status 0, code "network_error"`; `waitForCommand` timeouts are `status 0, code "timeout"`.
+- Non-2xx responses throw `HomeloftError` with `status` and `code` (the contract's `error` string, or `http_<status>`). Network failures are `status 0, code "network_error"`; `waitForCommand` timeouts are `status 0, code "timeout"`.
 - `waitForCommand` resolves with the final status for both `ok` and `error` (the bridge rejecting a command is a normal outcome, not an exception) and rejects only on timeout or HTTP/network failure.
 - Entity and command ids are `encodeURIComponent`-ed.

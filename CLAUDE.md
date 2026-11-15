@@ -1,9 +1,12 @@
-# CLAUDE.md / AGENTS.md — homecloud
+# CLAUDE.md / AGENTS.md — Homeloft
 
 These instructions are for every coding agent working in this repo (Claude Code, Antigravity,
 Codex and others). `AGENTS.md` is a symlink to this file.
 
-## Branch rules (enforced by repo rulesets)
+## Branch rules
+
+Rulesets enforce these once the repo is public (`scripts/setup-branch-rules.sh`). Until then
+they are on the honour system, so follow them exactly.
 
 - `main` is the default and production branch. **Only `develop` may be merged into `main`**,
   through a PR. The `branch-policy` check fails any other source.
@@ -45,12 +48,12 @@ and the HTTP API. Change it **first**, in the same PR as the code. The three par
   locking). Keep the module Terraform-compatible: no OpenTofu-only syntax in
   `cloud/terraform/modules/`. The folder is still named `terraform/`, since both tools read `.tf`.
 - Never commit `backend.hcl`, `*.tfvars`, state, `certs/` or `*_override.tf`.
-- The deploy runbook is `docs/first-deploy.md`. Update it whenever outputs, inputs or setup steps change.
+- The deploy runbook is `docs/quickstart.md`. Update it whenever outputs, inputs or setup steps change.
 
 ## Gotchas
 
 - DynamoDB tests use **moto**, not MagicMock, so boto3's real serializer runs. Floats go
-  through `hc_common.to_dynamo`, which converts them to `Decimal`. `online` is a reserved
+  through `hl_common.to_dynamo`, which converts them to `Decimal`. `online` is a reserved
   word, so alias it in expressions.
 - A new Python dependency for a Lambda breaks the "boto3 only, zip with archive_file"
   packaging. Avoid it, or add a layer on purpose.

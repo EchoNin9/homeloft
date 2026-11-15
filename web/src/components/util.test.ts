@@ -33,7 +33,7 @@ describe('organize', () => {
     expect(ids(organize(all, '', { ...p, showHidden: true })).at(-1)).toEqual(['_hidden', ['light.b']]);
   });
   it('groups by area, no-area last', () => {
-    const withArea = (x: Entity, a: string): Entity => ({ ...x, attributes: { ...x.attributes, homecloud_area: a } });
+    const withArea = (x: Entity, a: string): Entity => ({ ...x, attributes: { ...x.attributes, homeloft_area: a } });
     const list = [withArea(all[0], 'Office'), withArea(all[1], 'Bedroom'), all[2]];
     expect(ids(organize(list, '', { ...DEFAULT_PREFS, group: 'area' }))).toEqual([
       ['area:Bedroom', ['light.b']],
@@ -72,14 +72,14 @@ describe('warnings', () => {
       temp('sensor.nas_drive_2_temperature', '50'),
       temp('sensor.nas_drive_3_temperature', '130', '°F'),
       temp('sensor.nas_temperature', '70'),
-      { entity_id: 'sensor.docker_hc_up', state: 'running', last_changed: '', attributes: { health: 'healthy' } },
-      { entity_id: 'sensor.docker_hc_sick', state: 'running', last_changed: '', attributes: { health: 'unhealthy' } },
-      { entity_id: 'sensor.docker_hc_dead', state: 'exited', last_changed: '', attributes: {} },
+      { entity_id: 'sensor.docker_hl_up', state: 'running', last_changed: '', attributes: { health: 'healthy' } },
+      { entity_id: 'sensor.docker_hl_sick', state: 'running', last_changed: '', attributes: { health: 'unhealthy' } },
+      { entity_id: 'sensor.docker_hl_dead', state: 'exited', last_changed: '', attributes: {} },
     ], now);
     expect(w.map((x) => [x.kind, x.entity.entity_id])).toEqual([
       ['door', 'binary_sensor.old'],
-      ['service', 'sensor.docker_hc_dead'],
-      ['service', 'sensor.docker_hc_sick'],
+      ['service', 'sensor.docker_hl_dead'],
+      ['service', 'sensor.docker_hl_sick'],
       ['drive', 'sensor.nas_drive_1_temperature'],
       ['drive', 'sensor.nas_drive_3_temperature'],
     ]);
@@ -91,7 +91,7 @@ describe('sunTimes', () => {
   const mins = (hhmm?: string) => (hhmm ? Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3)) : NaN);
   it("computes today's times from the home location (within 3 min of published tables)", () => {
     // London, 2026-03-20: sunrise ~06:02, sunset ~18:14 GMT.
-    const ldn = sun({ homecloud_latitude: 51.5074, homecloud_longitude: -0.1278 });
+    const ldn = sun({ homeloft_latitude: 51.5074, homeloft_longitude: -0.1278 });
     const r = sunTimes([ldn], 'Europe/London', Date.parse('2026-03-20T21:00:00Z'));
     expect(Math.abs(mins(r.rise) - (6 * 60 + 2))).toBeLessThanOrEqual(3);
     expect(Math.abs(mins(r.set) - (18 * 60 + 14))).toBeLessThanOrEqual(3);
@@ -137,8 +137,8 @@ describe('updates', () => {
     attributes: { title, installed_version: from, latest_version: to },
   });
   it('chips only pending updates, last, with a tag or digest hint', () => {
-    const w = warnings([upd('homecloud-adguard-1', 'v0.107.79', 'v0.107.80'), upd('homecloud-mosquitto-1', '2', '2', 'off'),
-      upd('homecloud-homeassistant-1', 'stable', 'sha256:2193'), { entity_id: 'sensor.docker_x', state: 'exited', last_changed: '', attributes: {} }]);
+    const w = warnings([upd('homeloft-adguard-1', 'v0.107.79', 'v0.107.80'), upd('homeloft-mosquitto-1', '2', '2', 'off'),
+      upd('homeloft-homeassistant-1', 'stable', 'sha256:2193'), { entity_id: 'sensor.docker_x', state: 'exited', last_changed: '', attributes: {} }]);
     expect(w.map((x) => [x.kind, x.text])).toEqual([
       ['service', 'sensor.docker_x · exited'],
       ['update', 'adguard v0.107.79 → v0.107.80'],
@@ -146,9 +146,9 @@ describe('updates', () => {
     ]);
   });
   it('pulls for a digest, edits the tag otherwise', () => {
-    expect(updateInfo(upd('homecloud-homeassistant-1', 'stable', 'sha256:2193')).steps).toEqual([
+    expect(updateInfo(upd('homeloft-homeassistant-1', 'stable', 'sha256:2193')).steps).toEqual([
       'sudo /usr/local/bin/docker compose pull homeassistant', 'sudo /usr/local/bin/docker compose up -d homeassistant']);
-    expect(updateInfo(upd('homecloud-monitor-1', '27-cli', '29-cli')).steps).toEqual(['sudo /usr/local/bin/docker compose up -d monitor']);
+    expect(updateInfo(upd('homeloft-monitor-1', '27-cli', '29-cli')).steps).toEqual(['sudo /usr/local/bin/docker compose up -d monitor']);
     const dsm: Entity = { entity_id: 'update.nas_dsm_update', state: 'on', last_changed: '',
       attributes: { friendly_name: 'NAS DSM update', installed_version: 'DSM 7.2.2', latest_version: 'DSM 7.2.2 Update 1' } };
     expect(updateInfo(dsm)).toMatchObject({ container: false, steps: [] });

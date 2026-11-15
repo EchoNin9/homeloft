@@ -1,7 +1,7 @@
 variable "name_prefix" {
   description = "Prefix for every resource name. IoT Things are named {name_prefix}-{homeId} (MQTT client id must equal this)."
   type        = string
-  default     = "homecloud"
+  default     = "homeloft"
 
   validation {
     condition     = can(regex("^[a-z0-9][a-z0-9-]{0,30}$", var.name_prefix))
@@ -88,13 +88,13 @@ variable "create_web_hosting" {
 }
 
 variable "web_domain" {
-  description = "Optional custom domain for the web app, e.g. homecloud.example.com (a subdomain is easiest). Creates an ACM certificate and adds the URL to Cognito and API CORS. Needs the stack in us-east-1 (CloudFront certificates live there). See docs/first-deploy.md \"Custom domain\"."
+  description = "Optional custom domain for the web app, e.g. homeloft.example.com (a subdomain is easiest). Creates an ACM certificate and adds the URL to Cognito and API CORS. Needs the stack in us-east-1 (CloudFront certificates live there). See docs/quickstart.md \"Custom domain\"."
   type        = string
   default     = null
 
   validation {
     condition     = var.web_domain == null || can(regex("^([a-z0-9]([a-z0-9-]*[a-z0-9])?\\.)+[a-z]{2,}$", var.web_domain))
-    error_message = "web_domain must be a lowercase host name such as homecloud.example.com (no scheme, no path)."
+    error_message = "web_domain must be a lowercase host name such as homeloft.example.com (no scheme, no path)."
   }
 }
 
@@ -143,12 +143,12 @@ variable "enable_password_auth" {
 }
 
 variable "native_redirect_uris" {
-  description = "Custom-scheme redirect URIs for mobile apps (e.g. [\"homecloud://auth\"]). They are added to the created Cognito client's callback and logout URLs. If you bring your own pool, add them to your client yourself."
+  description = "Custom-scheme redirect URIs for mobile apps (e.g. [\"homeloft://auth\"]). They are added to the created Cognito client's callback and logout URLs. If you bring your own pool, add them to your client yourself."
   type        = list(string)
   default     = []
   validation {
     condition     = alltrue([for u in var.native_redirect_uris : can(regex("^[a-z][a-z0-9+.-]*://", u)) && !can(regex("^https?://", u))])
-    error_message = "native_redirect_uris must be custom-scheme URIs such as homecloud://auth (use web_callback_urls for http(s))."
+    error_message = "native_redirect_uris must be custom-scheme URIs such as homeloft://auth (use web_callback_urls for http(s))."
   }
 }
 
@@ -175,7 +175,29 @@ variable "history_utc_offset_hours" {
 }
 
 variable "cognito_branding" {
-  description = "Style the created pool's sign-in page like the dashboard (HomeCloud logo, teal, light/dark). Switches the domain to managed login and the pool to the Essentials tier (free for the first 10,000 MAU). Ignored with existing_user_pool_id."
+  description = "Style the created pool's sign-in page like the dashboard (Homeloft logo, teal, light/dark). Switches the domain to managed login and the pool to the Essentials tier (free for the first 10,000 MAU). Ignored with existing_user_pool_id."
   type        = bool
   default     = true
+}
+
+variable "mfa" {
+  description = "TOTP MFA for the created user pool. ON: managed login walks each user through authenticator setup at first sign-in, then asks for a code every time. OPTIONAL: only users who already enrolled get asked; managed login offers no enrolment. OFF: password only. Ignored with existing_user_pool_id."
+  type        = string
+  default     = "ON"
+  validation {
+    condition     = contains(["OFF", "OPTIONAL", "ON"], var.mfa)
+    error_message = "mfa must be OFF, OPTIONAL or ON."
+  }
+}
+
+variable "api_access_logs" {
+  description = "Write API Gateway access logs (method, route, status, latency, caller IP; no tokens or bodies) to CloudWatch."
+  type        = bool
+  default     = true
+}
+
+variable "log_retention_days" {
+  description = "Retention for the module's CloudWatch log groups that honour it (API access logs)."
+  type        = number
+  default     = 30
 }

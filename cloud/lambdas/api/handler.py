@@ -11,7 +11,7 @@ import re
 import boto3
 from boto3.dynamodb.conditions import Key
 
-import hc_common as hc
+import hl_common as hl
 
 log = logging.getLogger()
 log.setLevel(logging.INFO)
@@ -57,7 +57,7 @@ def _resp(status, body):
     return {
         "statusCode": status,
         "headers": {"content-type": "application/json"},
-        "body": hc.dumps(body),
+        "body": hl.dumps(body),
     }
 
 
@@ -83,14 +83,14 @@ def _claims(event):
 
 def _authorize(event):
     claims = _claims(event)
-    allowed = set(hc.csv_env(os.environ.get("ALLOWED_GROUPS")))
+    allowed = set(hl.csv_env(os.environ.get("ALLOWED_GROUPS")))
     if not claims or not (parse_groups(claims.get("cognito:groups")) & allowed):
         raise ApiError(403, "forbidden", "caller is not in an allowed group")
     return claims
 
 
 def _check_home(home):
-    if home not in hc.csv_env(os.environ.get("HOME_IDS")):
+    if home not in hl.csv_env(os.environ.get("HOME_IDS")):
         raise ApiError(404, "not_found", "unknown home")
     return home
 
@@ -122,7 +122,7 @@ def _json_body(event):
 
 def list_homes(_event):
     homes = []
-    for h in hc.csv_env(os.environ.get("HOME_IDS")):
+    for h in hl.csv_env(os.environ.get("HOME_IDS")):
         meta = _table().get_item(Key={"PK": f"HOME#{h}", "SK": "META"}).get("Item") or {}
         homes.append({
             "homeId": h,
@@ -136,7 +136,7 @@ def list_entities(event, home):
     domain = (event.get("queryStringParameters") or {}).get("domain")
     prefix = "ENTITY#"
     if domain:
-        if not hc.DOMAIN_RE.match(domain):
+        if not hl.DOMAIN_RE.match(domain):
             raise ApiError(400, "bad_request", "invalid domain")
         prefix += domain + "."
     kwargs = {"KeyConditionExpression": Key("PK").eq(f"HOME#{home}") & Key("SK").begins_with(prefix)}
@@ -149,11 +149,11 @@ def list_entities(event, home):
         kwargs["ExclusiveStartKey"] = r["LastEvaluatedKey"]
     ents = [_entity_out(i) for i in items]
     return 200, {"entities": ents, "updatedTs": max((e["updated_ts"] or 0 for e in ents), default=0),
-                 "historyEntities": hc.csv_env(os.environ.get("HISTORY_ENTITIES"))}
+                 "historyEntities": hl.csv_env(os.environ.get("HISTORY_ENTITIES"))}
 
 
 def get_entity(home, entity_id):
-    if not hc.ENTITY_ID_RE.match(entity_id):
+    if not hl.ENTITY_ID_RE.match(entity_id):
         raise ApiError(400, "bad_request", "invalid entity id")
     item = _table().get_item(Key={"PK": f"HOME#{home}", "SK": f"ENTITY#{entity_id}"}).get("Item")
     if not item:
@@ -164,14 +164,14 @@ def get_entity(home, entity_id):
 def post_command(event, home, claims):
     body = _json_body(event)
     domain, service = body.get("domain"), body.get("service")
-    if not (isinstance(domain, str) and hc.DOMAIN_RE.match(domain)
-            and isinstance(service, str) and hc.DOMAIN_RE.match(service)):
+    if not (isinstance(domain, str) and hl.DOMAIN_RE.match(domain)
+            and isinstance(service, str) and hl.DOMAIN_RE.match(service)):
         raise ApiError(400, "bad_request", "domain and service must be lowercase identifiers")
-    if f"{domain}.{service}" not in hc.csv_env(os.environ.get("ALLOWED_SERVICES")):
+    if f"{domain}.{service}" not in hl.csv_env(os.environ.get("ALLOWED_SERVICES")):
         raise ApiError(400, "not_allowed", f"{domain}.{service} is not an allowed service")
     target = body.get("target")
     eid = target.get("entity_id") if isinstance(target, dict) else None
-    if not isinstance(eid, str) or not hc.ENTITY_ID_RE.match(eid):
+    if not isinstance(eid, str) or not hl.ENTITY_ID_RE.match(eid):
         raise ApiError(400, "bad_request", "target.entity_id missing or malformed")
     data = body.get("data", {})
     if data is None:
@@ -179,19 +179,19 @@ def post_command(event, home, claims):
     if not isinstance(data, dict):
         raise ApiError(400, "bad_request", "data must be an object")
 
-    cid, now = hc.new_command_id(), hc.now_ms()
+    cid, now = hl.new_command_id(), hl.now_ms()
     key = {"PK": f"HOME#{home}", "SK": f"CMD#{cid}"}
-    hc.put_item(_table(), {
+    hl.put_item(_table(), {
         **key, "status": "pending", "error": None, "created_ts": now,
-        "requested_by": claims.get("sub"), "ttl": now // 1000 + hc.CMD_TTL_SECONDS,
+        "requested_by": claims.get("sub"), "ttl": now // 1000 + hl.CMD_TTL_SECONDS,
     })
-    payload = {"v": hc.PAYLOAD_VERSION, "id": cid, "ts": now, "domain": domain,
+    payload = {"v": hl.PAYLOAD_VERSION, "id": cid, "ts": now, "domain": domain,
                "service": service, "target": {"entity_id": eid}, "data": data}
     try:
-        _iot().publish(topic=f"homecloud/{home}/cmd", qos=1, payload=hc.dumps(payload).encode())
+        _iot().publish(topic=f"homeloft/{home}/cmd", qos=1, payload=hl.dumps(payload).encode())
     except Exception:
         log.exception("publish failed")
-        hc.update_item(
+        hl.update_item(
             _table(), Key=key, UpdateExpression="SET #s = :s, #e = :e",
             ExpressionAttributeNames={"#s": "status", "#e": "error"},
             ExpressionAttributeValues={":s": "error", ":e": "publish_failed"},
@@ -211,14 +211,14 @@ def _int_param(q, name, default):
 
 
 def get_history(event, home, entity_id):
-    if not hc.ENTITY_ID_RE.match(entity_id):
+    if not hl.ENTITY_ID_RE.match(entity_id):
         raise ApiError(400, "bad_request", "invalid entity id")
     q = event.get("queryStringParameters") or {}
     res = q.get("res") or "raw"
     if res not in HISTORY:
         raise ApiError(400, "bad_request", "res must be raw or day")
     span, max_span = HISTORY[res]
-    to = _int_param(q, "to", hc.now_ms())
+    to = _int_param(q, "to", hl.now_ms())
     frm = _int_param(q, "from", to - span)
     if not 0 <= to - frm <= max_span:
         raise ApiError(400, "bad_request", "from must be before to, within the max span")
@@ -226,7 +226,7 @@ def get_history(event, home, entity_id):
     pk = Key("PK").eq(f"HIST#{home}#{entity_id}")
     out = {"entityId": entity_id, "res": res, "from": frm, "to": to, "prev": None, "points": []}
     if res == "day":
-        day = lambda ms: dt.datetime.fromtimestamp(ms / 1000, hc.history_tz()).date().isoformat()
+        day = lambda ms: dt.datetime.fromtimestamp(ms / 1000, hl.history_tz()).date().isoformat()
         lo, hi = f"D#{day(frm)}", f"D#{day(to)}"
     else:
         lo, hi = f"R#{iso(frm)}", f"R#{iso(to)}"
@@ -250,7 +250,7 @@ def get_history(event, home, entity_id):
 
 
 def get_command(home, cid):
-    if not hc.CMD_ID_RE.match(cid):
+    if not hl.CMD_ID_RE.match(cid):
         raise ApiError(400, "bad_request", "invalid command id")
     item = _table().get_item(Key={"PK": f"HOME#{home}", "SK": f"CMD#{cid}"}).get("Item")
     if not item:
@@ -277,10 +277,10 @@ def put_prefs(event, home, claims):
     prefs = _json_body(event).get("prefs")
     if not isinstance(prefs, dict):
         raise ApiError(400, "bad_request", "prefs must be an object")
-    now = hc.now_ms()
+    now = hl.now_ms()
     # ponytail: stored as a JSON string so the server never parses it; optional KMS encryption
-    # (docs/first-deploy.md) wraps this one string.
-    hc.put_item(_table(), {**_prefs_key(home, claims), "prefs": json.dumps(prefs, separators=(",", ":")), "updated_ts": now})
+    # (docs/quickstart.md) wraps this one string.
+    hl.put_item(_table(), {**_prefs_key(home, claims), "prefs": json.dumps(prefs, separators=(",", ":")), "updated_ts": now})
     return 200, {"updatedTs": now}
 
 

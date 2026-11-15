@@ -5,27 +5,32 @@ on:
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+
 jobs:
   bridge:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: nas/bridge } }
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with: { python-version: "3.12" }
-      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - run: pip install -r requirements.txt -r requirements-dev.txt pip-audit
       - run: python -m pytest -q
+      - name: audit runtime dependencies
+        run: pip-audit -r requirements.txt
 
   cloud:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: cloud } }
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with: { python-version: "3.12" }
       - run: pip install -r requirements-dev.txt
       - run: python -m pytest -q
-      - uses: opentofu/setup-opentofu@v1
+      - uses: opentofu/setup-opentofu@9d84900f3238fab8cd84ce47d658d25dd008be2f # v1.0.8
         with:
           tofu_version: "~1.10"
           tofu_wrapper: false
@@ -42,10 +47,12 @@ jobs:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: web } }
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: "20", cache: npm, cache-dependency-path: web/package-lock.json }
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with: { node-version: "22", cache: npm, cache-dependency-path: web/package-lock.json }
       - run: npm ci
+      - name: audit runtime dependencies (fails on high or critical)
+        run: npm audit --omit=dev --audit-level=high
       - name: client stays dependency-free (shared with mobile app)
         run: |
           if grep -rnP "from ['\"](?!\./)" src/client --include=*.ts | grep -v '\.test\.ts:'; then
@@ -58,6 +65,18 @@ jobs:
   compose:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - run: cp nas/.env.example nas/.env && docker compose -f nas/docker-compose.yml --env-file nas/.env config -q
       - run: shellcheck nas/scripts/*.sh scripts/*.sh
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with: { fetch-depth: 0 }
+      - name: gitleaks (full history)
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz -o gl.tgz
+          echo "5bc41815076e6ed6ef8fbecc9d9b75bcae31f39029ceb55da08086315316e3ba  gl.tgz" | sha256sum -c -
+          tar xzf gl.tgz gitleaks
+          ./gitleaks git --no-banner --redact --log-opts="--all" .

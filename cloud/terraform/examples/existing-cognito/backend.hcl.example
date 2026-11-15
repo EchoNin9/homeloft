@@ -1,6 +1,6 @@
 # Copy to backend.hcl (gitignored) and fill in from: cd ../../bootstrap && tofu output -raw backend_hcl
-bucket       = "homecloud-tfstate-123456789012-us-east-1"
-key          = "homecloud/existing-cognito.tfstate"
+bucket       = "homeloft-tfstate-123456789012-us-east-1"
+key          = "homeloft/existing-cognito.tfstate"
 region       = "us-east-1"
 encrypt      = true
 use_lockfile = true # S3 native locking, no DynamoDB table needed

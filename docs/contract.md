@@ -1,4 +1,4 @@
-# HomeCloud contract (v1)
+# Homeloft contract (v1)
 
 The single source of truth shared by the three parts. Change this file first,
 then the code.
@@ -19,14 +19,14 @@ then the code.
 
 ## MQTT topics
 
-Prefix `homecloud/{homeId}/`. The IoT policy limits a home's certificate to its own prefix.
+Prefix `homeloft/{homeId}/`. The IoT policy limits a home's certificate to its own prefix.
 
 | Topic | Direction | Payload |
 |---|---|---|
-| `homecloud/{homeId}/state` | bridge → cloud | `StateBatch` |
-| `homecloud/{homeId}/cmd` | cloud → bridge | `Command` |
-| `homecloud/{homeId}/cmd/ack` | bridge → cloud | `CommandAck` |
-| `homecloud/{homeId}/status` | bridge → cloud | `{"online": bool, "ts": int, "version": str}` (also the LWT, retained=false, with `online:false`) |
+| `homeloft/{homeId}/state` | bridge → cloud | `StateBatch` |
+| `homeloft/{homeId}/cmd` | cloud → bridge | `Command` |
+| `homeloft/{homeId}/cmd/ack` | bridge → cloud | `CommandAck` |
+| `homeloft/{homeId}/status` | bridge → cloud | `{"online": bool, "ts": int, "version": str}` (also the LWT, retained=false, with `online:false`) |
 
 All `ts` values are Unix epoch **milliseconds** (integer). Payloads are JSON, max 128 KB
 (IoT Core's limit). The bridge splits a large snapshot into several batches.
@@ -60,12 +60,12 @@ a newer snapshot.
 (re)connect and every 15 minutes. Attributes are passed through as-is, minus anything
 over 4 KB per entity. Only entities allowed by the bridge's domain/entity filter are sent.
 
-The bridge adds one attribute of its own: `homecloud_area` (string), the name of the HA area
+The bridge adds one attribute of its own: `homeloft_area` (string), the name of the HA area
 the entity is in (its own area, else its device's). It is omitted when there is no area, and
 it is added after the 4 KB cap, so the cap never drops it. Areas are re-read at each snapshot, so
 a change in HA shows up within 15 minutes. Clients must treat it as optional.
 
-On `sun.sun` only, the bridge also adds `homecloud_latitude` and `homecloud_longitude` (numbers,
+On `sun.sun` only, the bridge also adds `homeloft_latitude` and `homeloft_longitude` (numbers,
 HA's configured home location) so clients can compute today's sunrise and sunset. HA itself only
 reports the next ones. Optional: without them, clients fall back to `next_rising` / `next_setting`.
 
@@ -219,7 +219,7 @@ debounced after each change. A failed write keeps the local copy.
 These names are reserved so no other change claims them. The mobile push and live-update
 work is described in [mobile.md](mobile.md).
 
-- MQTT `homecloud/{homeId}/event` (bridge → cloud): user-facing events that trigger push notifications.
+- MQTT `homeloft/{homeId}/event` (bridge → cloud): user-facing events that trigger push notifications.
 - `POST /v1/devices` and `DELETE /v1/devices/{deviceId}`: register and unregister push tokens.
 - `GET /v1/homes/{homeId}/summary`: entities plus home status in one call.
 - WebSocket route `$connect?homeId=` for live state updates.

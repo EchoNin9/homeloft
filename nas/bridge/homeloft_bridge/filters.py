@@ -6,8 +6,8 @@ from fnmatch import fnmatchcase
 from typing import Any, Iterable, Mapping
 
 MAX_ATTR_BYTES = 4096
-AREA_ATTR = "homecloud_area"
-LAT_ATTR, LON_ATTR = "homecloud_latitude", "homecloud_longitude"
+AREA_ATTR = "homeloft_area"
+LAT_ATTR, LON_ATTR = "homeloft_latitude", "homeloft_longitude"
 
 
 def _size(obj: Any) -> int:

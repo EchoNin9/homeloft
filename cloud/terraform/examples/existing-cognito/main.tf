@@ -1,4 +1,4 @@
-# Plug homecloud into a stack that already owns a Cognito pool.
+# Plug Homeloft into a stack that already owns a Cognito pool.
 # Shaped after an existing app stack (its infra/main.tf): it exposes outputs
 # `cognitoUserPoolId` and `cognitoClientId`, and uses the groups admin / manager / user.
 terraform {
@@ -50,10 +50,10 @@ data "terraform_remote_state" "consumer" {
   }
 }
 
-module "homecloud" {
-  source = "../../modules/homecloud"
+module "homeloft" {
+  source = "../../modules/homeloft"
   # In your own stack:
-  # source = "github.com/EchoNin9/homecloud//cloud/terraform/modules/homecloud?ref=v0.1.0"
+  # source = "github.com/EchoNin9/homeloft//cloud/terraform/modules/homeloft?ref=v0.1.0"
 
   home_ids = ["home"]
 
@@ -68,16 +68,16 @@ module "homecloud" {
   web_callback_urls  = [var.consumer_site_url]
 }
 
-output "api_url" { value = module.homecloud.api_url }
-output "iot_endpoint" { value = module.homecloud.iot_endpoint }
-output "thing_names" { value = module.homecloud.thing_names }
+output "api_url" { value = module.homeloft.api_url }
+output "iot_endpoint" { value = module.homeloft.iot_endpoint }
+output "thing_names" { value = module.homeloft.thing_names }
 
 output "certificate_pems" {
-  value     = module.homecloud.certificate_pems
+  value     = module.homeloft.certificate_pems
   sensitive = true
 }
 
 output "private_keys" {
-  value     = module.homecloud.private_keys
+  value     = module.homeloft.private_keys
   sensitive = true
 }

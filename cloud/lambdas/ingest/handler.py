@@ -10,7 +10,7 @@ import os
 import boto3
 from botocore.exceptions import ClientError
 
-import hc_common as hc
+import hl_common as hl
 
 log = logging.getLogger()
 log.setLevel(logging.INFO)
@@ -31,20 +31,20 @@ def _drop(reason, **extra):
 
 
 def _int_or_now(v):
-    return v if type(v) is int and v > 0 else hc.now_ms()
+    return v if type(v) is int and v > 0 else hl.now_ms()
 
 
 def handler(event, context=None):
     if not isinstance(event, dict):
         return _drop("not_object")
     # status carries no "v" per contract.md; every other kind must be v1.
-    if event.get("kind") != "status" and not hc.is_valid_version(event.get("v")):
+    if event.get("kind") != "status" and not hl.is_valid_version(event.get("v")):
         return _drop("bad_version", v=str(event.get("v"))[:20])
 
     home = event.get("homeId")
-    if not isinstance(home, str) or not hc.HOME_ID_RE.match(home):
+    if not isinstance(home, str) or not hl.HOME_ID_RE.match(home):
         return _drop("bad_home")
-    homes = hc.csv_env(os.environ.get("HOME_IDS"))
+    homes = hl.csv_env(os.environ.get("HOME_IDS"))
     if homes and home not in homes:
         return _drop("unknown_home", home=home)
     prefix = os.environ.get("THING_PREFIX")
@@ -63,7 +63,7 @@ def handler(event, context=None):
 
 
 def _touch_meta(home, ts):
-    hc.update_item(
+    hl.update_item(
         _table(),
         Key={"PK": f"HOME#{home}", "SK": "META"},
         UpdateExpression="SET last_seen_ts = :seen",
@@ -81,7 +81,7 @@ def _state(home, event):
         if not isinstance(e, dict):
             continue
         eid = e.get("entity_id")
-        if not isinstance(eid, str) or not hc.ENTITY_ID_RE.match(eid):
+        if not isinstance(eid, str) or not hl.ENTITY_ID_RE.match(eid):
             continue
         attrs = e.get("attributes")
         items.append({
@@ -95,19 +95,19 @@ def _state(home, event):
         })
     # snapshot=true is handled like a delta: upsert only. Entities missing from a snapshot
     # are NOT deleted; explicit deletions arrive via `removed`.
-    written_items = [it for it in items if hc.put_entity_if_newer(_table(), it)]
+    written_items = [it for it in items if hl.put_entity_if_newer(_table(), it)]
     written = len(written_items)
-    globs = hc.csv_env(os.environ.get("HISTORY_ENTITIES"))
-    ttl = hc.now_ms() // 1000 + hc.HIST_RAW_TTL_SECONDS
+    globs = hl.csv_env(os.environ.get("HISTORY_ENTITIES"))
+    ttl = hl.now_ms() // 1000 + hl.HIST_RAW_TTL_SECONDS
     hist = [{"PK": f"HIST#{home}#{it['entity_id']}", "SK": f"R#{it['last_changed']}", "state": it["state"], "ttl": ttl}
             for it in written_items
-            if isinstance(it["last_changed"], str) and it["last_changed"] and hc.is_tracked(it["entity_id"], globs)]
+            if isinstance(it["last_changed"], str) and it["last_changed"] and hl.is_tracked(it["entity_id"], globs)]
     if hist:
-        hc.put_items(_table(), hist)
-    removed = [r for r in (event.get("removed") or []) if isinstance(r, str) and hc.ENTITY_ID_RE.match(r)]
+        hl.put_items(_table(), hist)
+    removed = [r for r in (event.get("removed") or []) if isinstance(r, str) and hl.ENTITY_ID_RE.match(r)]
     if removed:
-        hc.delete_items(_table(), [{"PK": f"HOME#{home}", "SK": f"ENTITY#{r}"} for r in removed])
-    _touch_meta(home, hc.now_ms())
+        hl.delete_items(_table(), [{"PK": f"HOME#{home}", "SK": f"ENTITY#{r}"} for r in removed])
+    _touch_meta(home, hl.now_ms())
     return {"status": "ok", "kind": "state", "written": written, "stale": len(items) - written,
             "removed": len(removed), "snapshot": bool(event.get("snapshot"))}
 
@@ -117,14 +117,14 @@ def _status(home, event):
     if not isinstance(online, bool):
         return _drop("bad_online")
     version = event.get("version")
-    hc.update_item(
+    hl.update_item(
         _table(),
         Key={"PK": f"HOME#{home}", "SK": "META"},
         UpdateExpression="SET #o = :o, last_seen_ts = :seen, bridge_version = :bv, status_ts = :ts",
         ExpressionAttributeNames={"#o": "online"},
         ExpressionAttributeValues={
             ":o": online,
-            ":seen": hc.now_ms(),
+            ":seen": hl.now_ms(),
             ":bv": version if isinstance(version, str) else None,
             ":ts": _int_or_now(event.get("ts")),
         },
@@ -134,7 +134,7 @@ def _status(home, event):
 
 def _ack(home, event):
     cid = event.get("id")
-    if not isinstance(cid, str) or not hc.CMD_ID_RE.match(cid):
+    if not isinstance(cid, str) or not hl.CMD_ID_RE.match(cid):
         return _drop("bad_cmd_id")
     ok = event.get("ok")
     if not isinstance(ok, bool):
@@ -142,7 +142,7 @@ def _ack(home, event):
     err = event.get("error")
     try:
         # First ack wins: a later "duplicate" ack must not overwrite an "ok".
-        hc.update_item(
+        hl.update_item(
             _table(),
             Key={"PK": f"HOME#{home}", "SK": f"CMD#{cid}"},
             UpdateExpression="SET #s = :s, #e = :e, acked_ts = :ts",

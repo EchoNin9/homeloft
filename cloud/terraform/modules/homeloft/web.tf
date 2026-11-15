@@ -53,7 +53,7 @@ resource "aws_cloudfront_distribution" "web" {
     cached_methods             = ["GET", "HEAD"]
     compress                   = true
     cache_policy_id            = "658327ea-f89d-4fab-a63d-7e88639e58f6" # Managed-CachingOptimized
-    response_headers_policy_id = "67f7725c-6f97-4210-82d7-5512b31e9d03" # Managed-SecurityHeadersPolicy
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.web[0].id
   }
 
   # SPA routing. With OAC and no s3:ListBucket, missing keys come back as 403, not 404.
@@ -103,6 +103,61 @@ resource "aws_s3_bucket_policy" "web" {
     }]
   })
   depends_on = [aws_s3_bucket_public_access_block.web]
+}
+
+# Security headers, plus a Content-Security-Policy built from the only origins the SPA talks to:
+# itself, the API and the Cognito domain. Tokens live in localStorage, so CSP is the main guard
+# against an injected script reading them.
+locals {
+  # Built from inputs, not from resource attributes: the API's CORS origins and the pool client's
+  # callback URLs both depend on the distribution, so reading them back here would be a cycle.
+  csp_cognito_host = local.create_pool ? "${coalesce(var.cognito_domain_prefix, "${var.name_prefix}-${local.account_id}")}.auth.${local.region}.amazoncognito.com" : var.existing_cognito_domain
+  csp_cognito = local.csp_cognito_host == null ? "" : (
+    startswith(local.csp_cognito_host, "https://") ? local.csp_cognito_host : "https://${local.csp_cognito_host}"
+  )
+  # ponytail: any API Gateway in this region; the exact endpoint would need the API to exist first
+  # (cycle above). Serving /v1 through CloudFront would make this 'self'.
+  csp_api = "https://*.execute-api.${local.region}.amazonaws.com"
+  csp = join("; ", [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "font-src 'self'",
+    "connect-src 'self' ${local.csp_api} ${local.csp_cognito}",
+    "form-action 'self' ${local.csp_cognito}",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "object-src 'none'",
+  ])
+}
+
+resource "aws_cloudfront_response_headers_policy" "web" {
+  count   = var.create_web_hosting ? 1 : 0
+  name    = "${var.name_prefix}-web-security"
+  comment = "HSTS, CSP, nosniff, no framing"
+
+  security_headers_config {
+    content_security_policy {
+      content_security_policy = local.csp
+      override                = true
+    }
+    strict_transport_security {
+      access_control_max_age_sec = 63072000
+      include_subdomains         = false
+      preload                    = false
+      override                   = true
+    }
+    content_type_options { override = true }
+    frame_options {
+      frame_option = "DENY"
+      override     = true
+    }
+    referrer_policy {
+      referrer_policy = "strict-origin-when-cross-origin"
+      override        = true
+    }
+  }
 }
 
 # Runtime config the SPA fetches at startup, so one build works for every deployment.

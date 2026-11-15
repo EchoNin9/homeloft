@@ -22,7 +22,7 @@ const deg = (a: number) => `${Math.round(a)}°`;
 /** Home location the bridge adds to sun.sun, or null. */
 export function homeLocation(sun: Entity | undefined): [number, number] | null {
   const a = sun?.attributes;
-  return typeof a?.homecloud_latitude === 'number' && typeof a.homecloud_longitude === 'number' ? [a.homecloud_latitude, a.homecloud_longitude] : null;
+  return typeof a?.homeloft_latitude === 'number' && typeof a.homeloft_longitude === 'number' ? [a.homeloft_latitude, a.homeloft_longitude] : null;
 }
 
 /** Today's sun and moon paths across the sky (viewer's local day), plus rise/set and the moon's phase. */
@@ -52,7 +52,7 @@ export function SunMoon({ sun }: { sun: Entity }) {
   }, [loc?.[0], loc?.[1], from, to]);
 
   if (!loc || !data) {
-    return <p className="hc-muted">The home's location isn't available yet, so sun and moon paths can't be drawn. The NAS bridge adds it to the Sun entity.</p>;
+    return <p className="hl-muted">The home's location isn't available yet, so sun and moon paths can't be drawn. The NAS bridge adds it to the Sun entity.</p>;
   }
   const [lat, lon] = loc;
   const m = moonPhase(now);
@@ -80,46 +80,46 @@ export function SunMoon({ sun }: { sun: Entity }) {
   const times = (ts: number[]) => (ts.length ? ts.map(hhmm).join(', ') : '—');
 
   return (
-    <section className="hc-sunmoon" aria-label="Sun and moon">
-      <div className="hc-history-head">
+    <section className="hl-sunmoon" aria-label="Sun and moon">
+      <div className="hl-history-head">
         <h3>Sun &amp; moon today</h3>
-        <div className="hc-seg" role="group" aria-label="Show">
+        <div className="hl-seg" role="group" aria-label="Show">
           {(['sun', 'moon', 'both'] as const).map((k) => (
             <button key={k} type="button" aria-pressed={show === k} onClick={() => setShow(k)}>{k === 'both' ? 'Both' : k === 'sun' ? 'Sun' : 'Moon'}</button>
           ))}
         </div>
       </div>
-      <div className="hc-chart" ref={wrap}>
+      <div className="hl-chart" ref={wrap}>
         <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Altitude of the sun and moon today, in degrees above the horizon" onPointerMove={onMove} onPointerLeave={() => setHover(null)}>
-          {night.map(([a, b]) => <rect key={a} x={x(a)} width={Math.max(1, x(b) - x(a))} y={PAD.t} height={PH} className="hc-night" />)}
+          {night.map(([a, b]) => <rect key={a} x={x(a)} width={Math.max(1, x(b) - x(a))} y={PAD.t} height={PH} className="hl-night" />)}
           {[0, 30, 60, 90].map((v) => (
             <g key={v}>
-              <line x1={PAD.l} x2={W - PAD.r} y1={y(v)} y2={y(v)} className={v === 0 ? 'hc-horizon' : 'hc-gridline'} />
-              <text x={PAD.l - 6} y={y(v) + 4} textAnchor="end" className="hc-axis">{v}°</text>
+              <line x1={PAD.l} x2={W - PAD.r} y1={y(v)} y2={y(v)} className={v === 0 ? 'hl-horizon' : 'hl-gridline'} />
+              <text x={PAD.l - 6} y={y(v) + 4} textAnchor="end" className="hl-axis">{v}°</text>
             </g>
           ))}
           {[0, 6, 12, 18, 24].map((h) => {
             const t = from + (h / 24) * (to - from);
-            return <text key={h} x={x(t)} y={H - 6} textAnchor={h === 0 ? 'start' : h === 24 ? 'end' : 'middle'} className="hc-axis">{String(h).padStart(2, '0')}:00</text>;
+            return <text key={h} x={x(t)} y={H - 6} textAnchor={h === 0 ? 'start' : h === 24 ? 'end' : 'middle'} className="hl-axis">{String(h).padStart(2, '0')}:00</text>;
           })}
-          <clipPath id="hc-sky"><rect x={PAD.l} y={PAD.t - 6} width={PW} height={PH + 6} /></clipPath>
-          <g clipPath="url(#hc-sky)">
-            {show !== 'sun' && <path d={path(data.moon.pts)} className="hc-moon-line" />}
-            {show !== 'moon' && <path d={path(data.sun.pts)} className="hc-sun-line" />}
-            {show !== 'sun' && <circle cx={x(now)} cy={y(moonNow)} r={5} className="hc-moon-dot" />}
-            {show !== 'moon' && <circle cx={x(now)} cy={y(sunNow)} r={5} className="hc-sun-dot" />}
+          <clipPath id="hl-sky"><rect x={PAD.l} y={PAD.t - 6} width={PW} height={PH + 6} /></clipPath>
+          <g clipPath="url(#hl-sky)">
+            {show !== 'sun' && <path d={path(data.moon.pts)} className="hl-moon-line" />}
+            {show !== 'moon' && <path d={path(data.sun.pts)} className="hl-sun-line" />}
+            {show !== 'sun' && <circle cx={x(now)} cy={y(moonNow)} r={5} className="hl-moon-dot" />}
+            {show !== 'moon' && <circle cx={x(now)} cy={y(sunNow)} r={5} className="hl-sun-dot" />}
           </g>
-          <line x1={x(now)} x2={x(now)} y1={PAD.t} y2={PAD.t + PH} className="hc-crosshair" />
-          {hover !== null && <line x1={x(hover)} x2={x(hover)} y1={PAD.t} y2={PAD.t + PH} className="hc-crosshair" />}
+          <line x1={x(now)} x2={x(now)} y1={PAD.t} y2={PAD.t + PH} className="hl-crosshair" />
+          {hover !== null && <line x1={x(hover)} x2={x(hover)} y1={PAD.t} y2={PAD.t + PH} className="hl-crosshair" />}
         </svg>
-        {tip && hover !== null && <div className="hc-tip" style={{ left: `${(x(hover) / W) * 100}%` }}>{tip}</div>}
+        {tip && hover !== null && <div className="hl-tip" style={{ left: `${(x(hover) / W) * 100}%` }}>{tip}</div>}
       </div>
-      <p className="hc-legend">
-        {show !== 'moon' && <><span className="hc-swatch hc-sun-sw" /> Sun</>}
-        {show !== 'sun' && <><span className="hc-swatch hc-moon-sw" /> Moon</>}
-        <span className="hc-swatch hc-night-sw" /> Night · line at 0° is the horizon
+      <p className="hl-legend">
+        {show !== 'moon' && <><span className="hl-swatch hl-sun-sw" /> Sun</>}
+        {show !== 'sun' && <><span className="hl-swatch hl-moon-sw" /> Moon</>}
+        <span className="hl-swatch hl-night-sw" /> Night · line at 0° is the horizon
       </p>
-      <dl className="hc-astro">
+      <dl className="hl-astro">
         <div>
           <dt><Icon path={mdiWhiteBalanceSunny} size={20} /> Sun</dt>
           <dd>Rise {times(data.sun.rises)} · Set {times(data.sun.sets)} · Now {deg(sunNow)}</dd>
@@ -129,7 +129,7 @@ export function SunMoon({ sun }: { sun: Entity }) {
           <dd>Rise {times(data.moon.rises)} · Set {times(data.moon.sets)} · Now {deg(moonNow)} · {phaseName(m.phase)}, {Math.round(m.lit * 100)}% lit</dd>
         </div>
       </dl>
-      <details className="hc-table">
+      <details className="hl-table">
         <summary>Table</summary>
         <table>
           <thead><tr><th>Time</th><th>Sun</th><th>Moon</th></tr></thead>

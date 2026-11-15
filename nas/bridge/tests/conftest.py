@@ -1,7 +1,7 @@
 import pytest
 
-from homecloud_bridge.commands import CommandValidator
-from homecloud_bridge.filters import EntityFilter
+from homeloft_bridge.commands import CommandValidator
+from homeloft_bridge.filters import EntityFilter
 
 NOW = 1_760_000_000_000
 SERVICES = ["light.turn_on", "light.turn_off", "switch.toggle", "lock.lock"]

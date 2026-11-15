@@ -14,7 +14,7 @@ Until then, these notes only exist so that v0.1 doesn't paint us into a corner.
 
 - **One TypeScript codebase** builds Android and iOS. EAS Build handles signing and store
   submission.
-- **Reuses `web/src/client`** (`HomeCloudClient` and its types) unchanged. It has no DOM or
+- **Reuses `web/src/client`** (`HomeloftClient` and its types) unchanged. It has no DOM or
   browser APIs, only `fetch`, by design. Keep it that way: CI should fail if
   `web/src/client` imports anything outside its own folder.
 - **Doesn't reuse `web/src/auth`.** That module is browser-only (sessionStorage and
@@ -31,7 +31,7 @@ web and mobile apps both import it. Don't do this before then.
 
 | Need | v0.1 support |
 |---|---|
-| Sign-in | Cognito hosted UI with PKCE on a public client. Set the module input `native_redirect_uris = ["homecloud://auth"]`. |
+| Sign-in | Cognito hosted UI with PKCE on a public client. Set the module input `native_redirect_uris = ["homeloft://auth"]`. |
 | Read state / send commands | `/v1` HTTP API with an ID-token bearer, identical to the web app. |
 | Command feedback | `POST /commands` returns a command id, then `waitForCommand` polls for it. |
 | Offline home | `GET /v1/homes` gives `online` and `lastSeenTs`. Show these, and disable controls while offline. |
@@ -40,8 +40,8 @@ web and mobile apps both import it. Don't do this before then.
 ## Gaps to close for mobile (v0.2 backlog, in priority order)
 
 1. **Push notifications.** This is the main reason to have an app at all.
-   - **Bridge:** forwards selected HA events, for example a `homecloud_notify` event fired
-     by HA automations, to `homecloud/{homeId}/event`.
+   - **Bridge:** forwards selected HA events, for example a `homeloft_notify` event fired
+     by HA automations, to `homeloft/{homeId}/event`.
    - **Cloud:** ingest sends them to SNS mobile push (FCM for Android, APNs for iOS) or to
      the Expo push service. Pick Expo push for v0.2 because it needs no SNS platform
      applications.
@@ -63,5 +63,5 @@ nothing else claims them.
 ## Relationship to the official Home Assistant Companion app
 
 The HA Companion app needs HA to be reachable remotely, through Nabu Casa or by exposing
-HA yourself. The HomeCloud app goes through AWS only. The NAS opens no ports, logins use your
+HA yourself. The Homeloft app goes through AWS only. The NAS opens no ports, logins use your
 Cognito, and commands are limited to an allowlist. Both apps can be installed side by side.

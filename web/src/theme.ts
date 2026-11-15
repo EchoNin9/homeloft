@@ -3,7 +3,7 @@
 
 export type Theme = 'system' | 'light' | 'dark';
 
-const KEY = 'hc.theme';
+const KEY = 'hl.theme';
 const systemDark = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
 
 export const resolveTheme = (t: Theme, osDark: boolean): 'light' | 'dark' => (t === 'system' ? (osDark ? 'dark' : 'light') : t);

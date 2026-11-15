@@ -1,6 +1,6 @@
-# Integrating the HomeCloud cloud half
+# Integrating the Homeloft cloud half
 
-The OpenTofu module (Terraform-compatible) in `cloud/terraform/modules/homecloud` implements the AWS side of
+The OpenTofu module (Terraform-compatible) in `cloud/terraform/modules/homeloft` implements the AWS side of
 [`contract.md`](contract.md): DynamoDB, IoT Core (thing + cert + policy per home), two Lambdas,
 an HTTP API with a Cognito JWT authorizer and, optionally, private web hosting.
 
@@ -11,7 +11,7 @@ Three ways to use it, from most to least integrated.
 Creates everything: a Cognito pool, a public client (code + PKCE) and a hosted UI domain, plus
 the API, IoT resources, and S3 + CloudFront for the SPA. State goes in S3 (see below).
 
-**Follow [first-deploy.md](first-deploy.md).** It covers the state bucket, CSR, apply,
+**Follow [quickstart.md](quickstart.md).** It covers the state bucket, CSR, apply,
 certificates, your login, the NAS and the web upload, with a smoke test after each step.
 
 The SPA is published with `./scripts/deploy-web.sh`. The bucket's `config.json` (`apiUrl`,
@@ -32,7 +32,7 @@ backend.
 **Preferred: bring your own CSR (private key never enters state).**
 
 ```bash
-openssl req -new -newkey rsa:2048 -nodes -keyout home.key -out home.csr -subj "/CN=homecloud-home"
+openssl req -new -newkey rsa:2048 -nodes -keyout home.key -out home.csr -subj "/CN=homeloft-home"
 tofu apply -var 'device_csrs={home="'"$(cat home.csr)"'"}'   # or put it in a .tfvars file
 tofu output -json certificate_pems | jq -r .home > home.pem
 ```
@@ -50,7 +50,7 @@ Then the root CA and the endpoint for the bridge:
 ```bash
 curl -o AmazonRootCA1.pem https://www.amazontrust.com/repository/AmazonRootCA1.pem
 tofu output -raw iot_endpoint      # MQTT over TLS, port 8883
-tofu output -json thing_names      # MQTT client id MUST equal this (e.g. homecloud-home)
+tofu output -json thing_names      # MQTT client id MUST equal this (e.g. homeloft-home)
 ```
 
 ## 2. As a module in an existing stack with an existing Cognito pool
@@ -59,8 +59,8 @@ If your stack already owns a pool (for example an existing app stack, which expo
 `cognitoUserPoolId` / `cognitoClientId` outputs and uses groups `admin` / `manager` / `user`):
 
 ```hcl
-module "homecloud" {
-  source = "github.com/EchoNin9/homecloud//cloud/terraform/modules/homecloud?ref=v0.1.0"
+module "homeloft" {
+  source = "github.com/EchoNin9/homeloft//cloud/terraform/modules/homeloft?ref=v0.1.0"
 
   home_ids = ["home"]
 
@@ -73,7 +73,7 @@ module "homecloud" {
   web_callback_urls  = ["https://app.example.com"]  # only used for API CORS here
 }
 
-output "homecloud_api_url" { value = module.homecloud.api_url }
+output "homeloft_api_url" { value = module.homeloft.api_url }
 ```
 
 Notes:
@@ -120,7 +120,7 @@ A command is `pending` until the bridge acks (`ok` or `error`); it expires from 
 - **Ordering.** ENTITY writes are conditional on `last_changed` (incoming >= stored); stale items
   are skipped individually.
 - **Topic rules.** One rule per topic (`state`, `status`, `cmd/ack`) instead of one
-  `FROM 'homecloud/+/#' WHERE ...` rule: the ack filter needs `topic(4)`, which is undefined on
+  `FROM 'homeloft/+/#' WHERE ...` rule: the ack filter needs `topic(4)`, which is undefined on
   3-segment topics, and undefined-in-OR semantics are easy to get wrong. Narrow rules also never
   fire for the cloud's own `cmd` publishes. The SELECT also adds `topic(4) AS sub` and
   `clientid() AS clientId`; ingest drops messages whose client id is not `{prefix}-{homeId}`.
@@ -155,7 +155,7 @@ message rate and dominate). The 15-minute snapshots add ~100 messages/day per sn
 
 ## Mobile apps
 
-To let the planned Android/iOS app sign in, set `native_redirect_uris = ["homecloud://auth"]`
+To let the planned Android/iOS app sign in, set `native_redirect_uris = ["homeloft://auth"]`
 on the module. That adds the URI to the created Cognito client's callback and logout URLs.
 If you bring your own pool, add the same URI to your app client yourself. Native apps call the
 same `/v1` API with the same ID token. See [mobile.md](mobile.md).

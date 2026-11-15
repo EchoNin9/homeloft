@@ -1,6 +1,6 @@
 """Daily history rollups (EventBridge, once a day). Item shapes: contract.md "History".
 
-Re-rolls the last DAYS_BACK local days (hc.history_tz()) every run, so it is idempotent and a missed run heals.
+Re-rolls the last DAYS_BACK local days (hl.history_tz()) every run, so it is idempotent and a missed run heals.
 """
 import datetime as dt
 import math
@@ -9,7 +9,7 @@ import os
 import boto3
 from boto3.dynamodb.conditions import Key
 
-import hc_common as hc
+import hl_common as hl
 
 DAYS_BACK = 3
 UTC = dt.timezone.utc
@@ -79,15 +79,15 @@ def _samples(table, pk, entity, start, end):
 
 def handler(event=None, context=None):
     table = boto3.resource("dynamodb").Table(os.environ["TABLE_NAME"])
-    globs = hc.csv_env(os.environ.get("HISTORY_ENTITIES"))
-    tz = hc.history_tz()
+    globs = hl.csv_env(os.environ.get("HISTORY_ENTITIES"))
+    tz = hl.history_tz()
     today = dt.datetime.now(tz).date()
-    ttl = hc.now_ms() // 1000 + hc.HIST_DAY_TTL_SECONDS
+    ttl = hl.now_ms() // 1000 + hl.HIST_DAY_TTL_SECONDS
     out = []
-    for home in hc.csv_env(os.environ.get("HOME_IDS")):
+    for home in hl.csv_env(os.environ.get("HOME_IDS")):
         ents = _query(table, KeyConditionExpression=Key("PK").eq(f"HOME#{home}") & Key("SK").begins_with("ENTITY#"))
         for ent in ents:
-            if not hc.is_tracked(ent.get("entity_id", ""), globs):
+            if not hl.is_tracked(ent.get("entity_id", ""), globs):
                 continue
             pk = f"HIST#{home}#{ent['entity_id']}"
             for back in range(1, DAYS_BACK + 1):
@@ -96,5 +96,5 @@ def handler(event=None, context=None):
                 r = summarize(_samples(table, pk, ent, start, start + 86400), start, start + 86400)
                 if r:
                     out.append({"PK": pk, "SK": f"D#{day.isoformat()}", **r, "ttl": ttl})
-    hc.put_items(table, out)
+    hl.put_items(table, out)
     return {"status": "ok", "rollups": len(out)}

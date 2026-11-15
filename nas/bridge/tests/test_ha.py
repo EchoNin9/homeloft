@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from homecloud_bridge.ha import HAClient, HAError
+from homeloft_bridge.ha import HAClient, HAError
 
 
 class FakeWS:
@@ -103,7 +103,7 @@ async def test_call_when_disconnected():
 
 
 async def test_bad_token_never_connects(monkeypatch):
-    monkeypatch.setattr("homecloud_bridge.ha.backoff_delay", lambda a: 10)
+    monkeypatch.setattr("homeloft_bridge.ha.backoff_delay", lambda a: 10)
     ws = FakeWS(token_ok=False)
     c, task, _, ev = await start(ws)
     await asyncio.sleep(0.1)
@@ -112,7 +112,7 @@ async def test_bad_token_never_connects(monkeypatch):
 
 
 async def test_reconnects_after_drop(monkeypatch):
-    monkeypatch.setattr("homecloud_bridge.ha.backoff_delay", lambda a: 0.01)
+    monkeypatch.setattr("homeloft_bridge.ha.backoff_delay", lambda a: 0.01)
     sockets = [FakeWS(), FakeWS()]
     count = 0
     ev = asyncio.Event()

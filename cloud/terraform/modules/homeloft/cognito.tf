@@ -7,6 +7,15 @@ resource "aws_cognito_user_pool" "this" {
   user_pool_tier           = var.cognito_branding ? "ESSENTIALS" : null
   auto_verified_attributes = ["email"]
 
+  # TOTP (authenticator app). ON: managed login runs the setup at first sign-in (var.mfa).
+  mfa_configuration = var.mfa
+  dynamic "software_token_mfa_configuration" {
+    for_each = var.mfa == "OFF" ? [] : [1]
+    content {
+      enabled = true
+    }
+  }
+
   admin_create_user_config {
     allow_admin_create_user_only = true # private install: no self sign-up
   }
@@ -75,7 +84,7 @@ resource "aws_cognito_user_pool_client" "this" {
   }
 }
 
-# Sign-in page styled like the dashboard: HomeCloud logo, teal accent, dark theme.
+# Sign-in page styled like the dashboard: Homeloft logo, teal accent, dark theme.
 # Colours are RRGGBBAA hex without '#'. Values Cognito doesn't know are ignored, so keep to its schema.
 resource "aws_cognito_managed_login_branding" "this" {
   count        = local.create_pool && var.cognito_branding ? 1 : 0

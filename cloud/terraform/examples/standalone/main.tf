@@ -30,7 +30,7 @@ variable "device_csrs" {
 }
 
 variable "device_csr_files" {
-  description = "Optional homeId => path to a CSR file (recommended; see docs/first-deploy.md). Merged over device_csrs."
+  description = "Optional homeId => path to a CSR file (recommended; see docs/quickstart.md). Merged over device_csrs."
   type        = map(string)
   default     = {}
 }
@@ -42,7 +42,7 @@ variable "history_utc_offset_hours" {
 }
 
 variable "web_domain" {
-  description = "Optional custom domain for the web app, e.g. homecloud.example.com. See docs/first-deploy.md \"Custom domain\"."
+  description = "Optional custom domain for the web app, e.g. homeloft.example.com. See docs/quickstart.md \"Custom domain\"."
   type        = string
   default     = null
 }
@@ -57,8 +57,8 @@ provider "aws" {
   region = var.region
 }
 
-module "homecloud" {
-  source = "../../modules/homecloud"
+module "homeloft" {
+  source = "../../modules/homeloft"
 
   home_ids           = var.home_ids
   device_csrs        = merge(var.device_csrs, { for k, p in var.device_csr_files : k => file(p) })
@@ -70,25 +70,25 @@ module "homecloud" {
   route53_zone_id          = var.route53_zone_id
 }
 
-output "api_url" { value = module.homecloud.api_url }
-output "iot_endpoint" { value = module.homecloud.iot_endpoint }
-output "thing_names" { value = module.homecloud.thing_names }
-output "web_url" { value = module.homecloud.web_url }
-output "web_bucket" { value = module.homecloud.web_bucket }
-output "web_distribution_id" { value = module.homecloud.web_distribution_id }
-output "table_name" { value = module.homecloud.table_name }
-output "web_domain_status" { value = module.homecloud.web_domain_status }
-output "web_dns_records" { value = module.homecloud.web_dns_records }
-output "user_pool_id" { value = module.homecloud.user_pool_id }
-output "user_pool_client_id" { value = module.homecloud.user_pool_client_id }
-output "cognito_domain" { value = module.homecloud.cognito_domain }
+output "api_url" { value = module.homeloft.api_url }
+output "iot_endpoint" { value = module.homeloft.iot_endpoint }
+output "thing_names" { value = module.homeloft.thing_names }
+output "web_url" { value = module.homeloft.web_url }
+output "web_bucket" { value = module.homeloft.web_bucket }
+output "web_distribution_id" { value = module.homeloft.web_distribution_id }
+output "table_name" { value = module.homeloft.table_name }
+output "web_domain_status" { value = module.homeloft.web_domain_status }
+output "web_dns_records" { value = module.homeloft.web_dns_records }
+output "user_pool_id" { value = module.homeloft.user_pool_id }
+output "user_pool_client_id" { value = module.homeloft.user_pool_client_id }
+output "cognito_domain" { value = module.homeloft.cognito_domain }
 
 output "certificate_pems" {
-  value     = module.homecloud.certificate_pems
+  value     = module.homeloft.certificate_pems
   sensitive = true
 }
 
 output "private_keys" {
-  value     = module.homecloud.private_keys
+  value     = module.homeloft.private_keys
   sensitive = true
 }

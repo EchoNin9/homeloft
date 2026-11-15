@@ -12,23 +12,23 @@ Requirements: DSM 7.2+, **Container Manager** (Package Center), an x86_64 or arm
 ## 1. Folders
 
 ```sh
-sudo mkdir -p /volume1/docker/homecloud/{homeassistant,mosquitto/data,zigbee2mqtt,bridge/certs,backups}
+sudo mkdir -p /volume1/docker/homeloft/{homeassistant,mosquitto/data,zigbee2mqtt,bridge/certs,backups,wud}
 ```
 
 Copy the contents of the repo's `nas/` directory (compose file, `bridge/`, `mosquitto/`, `scripts/`,
-`.env.example`) to `/volume1/docker/homecloud/stack/`, e.g. with File Station or `scp`.
+`.env.example`) to `/volume1/docker/homeloft/stack/`, e.g. with File Station or `scp`.
 `DATA_ROOT` (runtime data) and the stack directory (code) are separate on purpose, so backups of
 `DATA_ROOT` stay small.
 
 ## 2. Cloud credentials
 
 Recommended: generate `private.key` on the NAS and send only a CSR to the cloud, as in
-[first-deploy.md](first-deploy.md) steps 2 and 4. Otherwise the cloud module outputs, per home, `cert.pem`, `private.key` and the IoT endpoint, plus
+[quickstart.md](quickstart.md) steps 2 and 4. Otherwise the cloud module outputs, per home, `cert.pem`, `private.key` and the IoT endpoint, plus
 `AmazonRootCA1.pem` (from <https://www.amazontrust.com/repository/AmazonRootCA1.pem>). Place them in
-`/volume1/docker/homecloud/bridge/certs/`:
+`/volume1/docker/homeloft/bridge/certs/`:
 
 ```sh
-cd /volume1/docker/homecloud/bridge/certs
+cd /volume1/docker/homeloft/bridge/certs
 ls            # cert.pem  private.key  AmazonRootCA1.pem
 sudo chown -R 10001:10001 . && sudo chmod 700 . && sudo chmod 600 private.key
 ```
@@ -40,9 +40,9 @@ UID 10001 is the bridge container's non-root user. The compose file mounts this 
 Mosquitto refuses anonymous clients; create the password file before first start:
 
 ```sh
-cd /volume1/docker/homecloud/mosquitto
+cd /volume1/docker/homeloft/mosquitto
 sudo docker run --rm -v "$PWD":/work eclipse-mosquitto:2 \
-  mosquitto_passwd -c -b /work/passwd homecloud 'CHOOSE-A-PASSWORD'
+  mosquitto_passwd -c -b /work/passwd homeloft 'CHOOSE-A-PASSWORD'
 sudo chown 1883:1883 passwd && sudo chmod 600 passwd
 ```
 
@@ -53,16 +53,16 @@ only, so it is reachable from HA (host network) and Zigbee2MQTT but not from the
 
 1. Copy `.env.example` to `.env` next to `docker-compose.yml` and fill it in (`HOME_ID`, `IOT_ENDPOINT`,
    `IOT_THING_NAME`, `DATA_ROOT`, `TZ`). `TZ` is an IANA name (e.g. `America/Vancouver`). Keep it
-   consistent with `history_utc_offset_hours` in the cloud tfvars (docs/first-deploy.md step 0). Leave `HA_TOKEN` for step 5.
-2. Container Manager -> **Project** -> **Create**. Name `homecloud`, path
-   `/volume1/docker/homecloud/stack`, source **Use existing docker-compose.yml**. Container Manager
+   consistent with `history_utc_offset_hours` in the cloud tfvars (docs/quickstart.md step 0). Leave `HA_TOKEN` for step 5.
+2. Container Manager -> **Project** -> **Create**. Name `homeloft`, path
+   `/volume1/docker/homeloft/stack`, source **Use existing docker-compose.yml**. Container Manager
    picks up the `.env` in the same folder. Don't start the project yet (or accept that `bridge` will
    fail until step 5).
 3. Start HA and Mosquitto first: from SSH, `sudo docker compose up -d homeassistant mosquitto`
    (from the stack folder), or just build and start the project and finish step 5 afterwards.
 
 Home Assistant is then at `http://<nas-ip>:8123`. Complete onboarding, then add the **MQTT**
-integration: broker `127.0.0.1`, port 1883, user `homecloud` and the password from step 3.
+integration: broker `127.0.0.1`, port 1883, user `homeloft` and the password from step 3.
 
 ## 5. Home Assistant token
 
@@ -77,13 +77,13 @@ seccomp, which BuildKit expects; seen on DSM 7.4 on x86_64), build with the lega
 without building:
 
 ```sh
-sudo DOCKER_BUILDKIT=0 docker build -t homecloud-bridge:0.1.0 bridge
+sudo DOCKER_BUILDKIT=0 docker build -t homeloft-bridge:0.1.0 bridge
 sudo docker compose up -d --no-build bridge
 ```
 
 The Container Manager **Build** action hits the same error; once the image exists, plain Start/Restart works.
 
-Check `docker logs homecloud-bridge-1`: expect `connected to Home Assistant`, `connected to IoT Core`,
+Check `docker logs homeloft-bridge-1`: expect `connected to Home Assistant`, `connected to IoT Core`,
 `snapshot sent: N entities`.
 
 ### What the bridge exposes
@@ -106,12 +106,12 @@ Adding it is your call; consider excluding specific locks by glob.
    all of this.
 3. Set `ZIGBEE_DEVICE=/dev/ttyUSB0` (or your path) in `.env`. The compose file maps it to
    `/dev/ttyZigbee` in the container.
-4. Create `/volume1/docker/homecloud/zigbee2mqtt/configuration.yaml`:
+4. Create `/volume1/docker/homeloft/zigbee2mqtt/configuration.yaml`:
    ```yaml
    homeassistant: true
    mqtt:
      server: mqtt://mosquitto:1883
-     user: homecloud
+     user: homeloft
      password: CHOOSE-A-PASSWORD
    serial:
      port: /dev/ttyZigbee
@@ -128,9 +128,9 @@ Adding it is your call; consider excluding specific locks by glob.
   `BACKUP_KEEP` (default 14). Left out: caches, logs, HA's history DB (`home-assistant_v2.db`), HA's own
   backups, and AdGuard's query log/stats (`adguard/work`).
 - Run one now: `sudo docker compose exec backup bash /backup.sh`.
-- Restore: stop the stack, then `sudo tar -xzf backups/homecloud-<ts>.tar.gz -C /volume1/docker/homecloud`, then start it again.
+- Restore: stop the stack, then `sudo tar -xzf backups/homeloft-<ts>.tar.gz -C /volume1/docker/homeloft`, then start it again.
 - The archive contains your IoT private key and HA token. For off-site copies, add
-  `/volume1/docker/homecloud/backups` to a **Hyper Backup** task (or run `backup.sh` from DSM Task
+  `/volume1/docker/homeloft/backups` to a **Hyper Backup** task (or run `backup.sh` from DSM Task
   Scheduler with `BACKUP_S3_URI` and the AWS CLI on the host). Keep the destination private and encrypted.
 - HA's built-in backups (Settings -> System -> Backups) still give a consistent copy that includes history.
 
@@ -139,9 +139,9 @@ Adding it is your call; consider excluding specific locks by glob.
 DSM's DNS Server owns port 53 on the NAS's own addresses, so AdGuard gets its own LAN IP through a macvlan
 network on a **spare NIC**. If it used the NIC that holds the NAS's main IP, it couldn't reach DSM DNS.
 
-1. In `.env`, set `ADGUARD_IP` (a free IP outside DHCP), `ADGUARD_PARENT` (the spare NIC, e.g. `eth3`),
+1. In `.env`, set `ADGUARD_IP` (a free IP outside DHCP), `ADGUARD_PARENT` (the spare NIC, e.g. `eth1`),
    `LAN_SUBNET` and `LAN_GATEWAY`.
-2. `sudo mkdir -p /volume1/docker/homecloud/adguard/{conf,work}`, then
+2. `sudo mkdir -p /volume1/docker/homeloft/adguard/{conf,work}`, then
    `sudo docker compose --profile adguard up -d adguard`.
 3. Open `http://<ADGUARD_IP>:3000` and run the wizard. Keep the web UI on 3000 and DNS on 53, all interfaces.
 4. Settings -> DNS settings:
@@ -161,13 +161,18 @@ cloud like any other sensor. The web dashboard shows them as sensor tiles, plus 
 badge when one isn't `running` or is `unhealthy`. It needs `sensor` in `BRIDGE_ALLOWED_DOMAINS`
 (it is by default).
 
+Neither `monitor` nor `wud` mounts the Docker socket. Both read through `socket-proxy`, which listens
+on `127.0.0.1:2375` only and refuses every write (no create, exec, start or stop). If something else
+on the NAS already uses port 2375, change the published port and `DOCKER_HOST` /
+`WUD_WATCHER_LOCAL_PORT` to match.
+
 Only compose containers (any project) are reported, so a one-off `docker run` doesn't raise a false alarm.
 Compose's temporary `<12 hex>_<name>` copy made during a recreate is skipped too.
 HA keeps a removed container's last state until HA restarts, so a deleted container can leave a stale
 **Service down** badge. Clear it in two places:
 1. HA: `sudo docker compose restart homeassistant`. The monitor re-sends the live containers within 60 s.
 2. Cloud: the stored copy isn't deleted by an HA restart (snapshots only add), so delete it once:
-   `aws dynamodb delete-item --table-name homecloud-state --key '{"PK":{"S":"HOME#<home_id>"},"SK":{"S":"ENTITY#sensor.docker_<name>"}}'`
+   `aws dynamodb delete-item --table-name homeloft-state --key '{"PK":{"S":"HOME#<home_id>"},"SK":{"S":"ENTITY#sensor.docker_<name>"}}'`
 
 ## 10. Upgrading
 
@@ -177,10 +182,10 @@ either shows the commands to run. It only notifies: nothing in the cloud can upg
 
 Setup, once:
 1. Add an MQTT user for it. Put the password in `.env` as `WUD_MQTT_PASSWORD`, then run
-   `sudo docker run --rm -v /volume1/docker/homecloud/mosquitto/passwd:/p eclipse-mosquitto:2 mosquitto_passwd -b /p wud "$PW"`
-   and `sudo docker kill -s HUP homecloud-mosquitto-1`.
+   `sudo docker run --rm -v /volume1/docker/homeloft/mosquitto/passwd:/p eclipse-mosquitto:2 mosquitto_passwd -b /p wud "$PW"`
+   and `sudo docker kill -s HUP homeloft-mosquitto-1`.
 2. Set `WUD_ADMIN_PASSWORD` in `.env`. WUD 9 won't start without one, even though its UI is off.
-3. `sudo mkdir -p /volume1/docker/homecloud/wud && sudo docker compose up -d wud`.
+3. `sudo mkdir -p /volume1/docker/homeloft/wud && sudo docker compose up -d wud`.
 4. Add `update` to `BRIDGE_ALLOWED_DOMAINS`, and `sensor.wud_*,binary_sensor.wud_*` to
    `BRIDGE_ENTITY_EXCLUDE`. Then run `sudo docker compose up -d bridge`.
 
