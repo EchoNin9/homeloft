@@ -60,7 +60,7 @@ If your stack already owns a pool (for example an existing app stack, which expo
 
 ```hcl
 module "homeloft" {
-  source = "github.com/EchoNin9/homeloft//cloud/terraform/modules/homeloft?ref=v0.1.1"
+  source = "github.com/EchoNin9/homeloft//cloud/terraform/modules/homeloft?ref=v0.1.2"
 
   home_ids = ["home"]
 

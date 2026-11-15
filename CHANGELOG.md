@@ -5,6 +5,8 @@ All notable changes to Homeloft. Versions follow [SemVer](https://semver.org); e
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-15
+
 - **Bridge:** sends a fresh snapshot when Home Assistant fires `homeassistant_started`. A bridge that connects while
   HA is still booting no longer stays stuck on a near-empty entity list until it's restarted.
 - **Docs:** Quickstart covers the socket proxy (port 2375) and embedding under a CSP; the Upgrading steps work on DSM
