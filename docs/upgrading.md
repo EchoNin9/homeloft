@@ -39,8 +39,8 @@ sudo docker compose up -d                                            # add --pro
 sudo docker compose logs --tail 20 bridge    # connected to Home Assistant, connected to IoT Core, snapshot sent
 ```
 
-On a non-Synology host, `sudo docker compose build bridge` works instead of the legacy build. If `snapshot sent`
-shows only a handful of entities, Home Assistant was still starting: `sudo docker compose restart bridge`.
+On a non-Synology host, `sudo docker compose build bridge` works instead of the legacy build. If HA restarted too,
+the first `snapshot sent` can be small; a second one follows once HA has finished starting.
 
 ## Third-party containers
 

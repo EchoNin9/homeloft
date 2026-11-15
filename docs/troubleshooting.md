@@ -28,7 +28,7 @@ For problems specific to DSM, also read [Synology gotchas](synology.md#synology-
 | Connects, then drops every few seconds | Two bridges using the same client id | Run only one bridge per home |
 | `auth_invalid`, or `Home Assistant rejected the access token` | Token pasted with whitespace, or revoked | Create a new long-lived token, then recreate the container after editing `.env` |
 | Can't reach `127.0.0.1:8123` | HA isn't up, or `HA_URL` has the wrong port | HA must run with `network_mode: host` |
-| `snapshot sent: 0 entities` | Domain filter excludes everything, or HA was still loading when the bridge connected | Check `BRIDGE_ALLOWED_DOMAINS` and `BRIDGE_ENTITY_EXCLUDE`; otherwise restart the bridge |
+| `snapshot sent: 0 entities`, and no second snapshot | The domain filter excludes everything | Check `BRIDGE_ALLOWED_DOMAINS` and `BRIDGE_ENTITY_EXCLUDE`. (A small first snapshot while HA is starting is normal: the bridge sends another when HA finishes. Before v0.1.2, restart the bridge) |
 | Commands come back `not_allowed` | Service not in `BRIDGE_ALLOWED_SERVICES`, or the entity is excluded or outside the allowed domains | Adjust `.env`, then `sudo docker compose up -d bridge` |
 | Commands come back `stale` | NAS clock more than 60 s behind (or 10 s ahead of) the cloud | Fix NTP |
 

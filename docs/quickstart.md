@@ -146,8 +146,10 @@ Set these values in `.env`:
 
 **Smoke tests**
 - [ ] `sudo docker logs homeloft-bridge-1` shows `connected to Home Assistant`, `connected to IoT Core`
-      and `snapshot sent: N entities` with N > 0. If N is 0 on a first start, the bridge reached
-      Home Assistant before HA finished loading: `sudo docker restart homeloft-bridge-1` and check again.
+      and `snapshot sent: N entities` with N > 0. If HA was still starting, the first snapshot is small and a
+      second one follows when HA finishes (`Home Assistant finished starting; re-sending the snapshot`).
+- [ ] `sudo docker compose ps` shows `socket-proxy` running. It gives `monitor` and `wud` read-only access to
+      Docker on `127.0.0.1:2375`; nothing else on the NAS may use that port ([details](synology.md#9-container-monitoring)).
 - [ ] From the deploy machine, the cloud sees the home as online:
   ```sh
   aws dynamodb get-item --table-name "$(tofu output -raw table_name)" \
@@ -169,6 +171,10 @@ This leaves the module-managed `config.json` in the bucket untouched.
 - [ ] Open `web_url` and sign in with the temporary password from the email. You then set a new
       password and, because the module sets `mfa = "ON"`, scan a QR code with an authenticator app
       (any TOTP app) and enter its 6-digit code. Your home shows as **online** with entities grouped by domain.
+
+The dashboard is served with a strict Content-Security-Policy that also forbids framing it (`frame-ancestors 'none'`).
+To show Homeloft inside another app, embed the React component instead of an iframe and give your app the CSP in
+[Integrating: CSP](integrate.md#content-security-policy-in-your-app).
 
 ## 8. End to end (this is M1)
 
