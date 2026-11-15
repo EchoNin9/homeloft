@@ -72,6 +72,9 @@ class HAClient:
         reader = asyncio.create_task(self._reader(ws))
         try:
             await self._request("subscribe_events", event_type="state_changed")
+            # Connecting while HA is still booting gives a near-empty get_states; HA fires this
+            # event once every integration has loaded, and we snapshot again then.
+            await self._request("subscribe_events", event_type="homeassistant_started")
             self._on_connected()
             await reader
         finally:
@@ -98,7 +101,10 @@ class HAClient:
                     fut.set_exception(HAError(str(err.get("message") or err.get("code") or "error")))
         elif kind == "event":
             event = msg.get("event") or {}
-            if event.get("event_type") == "state_changed":
+            if event.get("event_type") == "homeassistant_started":
+                log.info("Home Assistant finished starting; re-sending the snapshot")
+                self._on_connected()
+            elif event.get("event_type") == "state_changed":
                 data = event.get("data") or {}
                 eid = data.get("entity_id")
                 if isinstance(eid, str):  # new_state None means the entity was removed
