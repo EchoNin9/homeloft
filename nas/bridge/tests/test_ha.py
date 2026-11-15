@@ -64,8 +64,8 @@ async def test_auth_subscribe_states_and_events():
     c, task, got, ev = await start(ws)
     await asyncio.wait_for(ev.wait(), 2)
     assert c.connected
-    assert [m["type"] for m in ws.sent] == ["auth", "subscribe_events"]
-    assert ws.sent[1]["event_type"] == "state_changed"
+    assert [m["type"] for m in ws.sent] == ["auth", "subscribe_events", "subscribe_events"]
+    assert [m["event_type"] for m in ws.sent[1:]] == ["state_changed", "homeassistant_started"]
     assert await c.get_states() == ws.states
 
     ws.event({"entity_id": "light.a", "state": "off"})
@@ -73,6 +73,22 @@ async def test_auth_subscribe_states_and_events():
     ws.q.put_nowait(json.dumps({"type": "event", "event": {"event_type": "other", "data": {}}}))
     await asyncio.sleep(0.05)
     assert got == [("light.a", {"entity_id": "light.a", "state": "off"}), ("light.gone", None)]
+    task.cancel()
+
+
+async def test_ha_started_event_requests_a_new_snapshot():
+    ws = FakeWS()
+    calls = []
+    c = HAClient("ws://x", "secret", lambda e, s: None, lambda: calls.append(1), connect=lambda u: ws)
+    task = asyncio.create_task(c.run())
+    for _ in range(100):
+        if calls:
+            break
+        await asyncio.sleep(0.01)
+    assert calls == [1]  # once on connect
+    ws.q.put_nowait(json.dumps({"id": 2, "type": "event", "event": {"event_type": "homeassistant_started", "data": {}}}))
+    await asyncio.sleep(0.05)
+    assert calls == [1, 1]  # and again when HA finishes starting
     task.cancel()
 
 

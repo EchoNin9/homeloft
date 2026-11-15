@@ -53,7 +53,7 @@ data "terraform_remote_state" "consumer" {
 module "homeloft" {
   source = "../../modules/homeloft"
   # In your own stack:
-  # source = "github.com/EchoNin9/homeloft//cloud/terraform/modules/homeloft?ref=v0.1.0"
+  # source = "github.com/EchoNin9/homeloft//cloud/terraform/modules/homeloft?ref=v0.1.2"
 
   home_ids = ["home"]
 

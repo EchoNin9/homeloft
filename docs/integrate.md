@@ -60,7 +60,7 @@ If your stack already owns a pool (for example an existing app stack, which expo
 
 ```hcl
 module "homeloft" {
-  source = "github.com/EchoNin9/homeloft//cloud/terraform/modules/homeloft?ref=v0.1.0"
+  source = "github.com/EchoNin9/homeloft//cloud/terraform/modules/homeloft?ref=v0.1.2"
 
   home_ids = ["home"]
 
@@ -85,6 +85,20 @@ Notes:
   (the whole repo is cloned); the Terraform registry's "module only" packaging would not include them.
 - A runnable version reading the outputs via `terraform_remote_state` is in
   `cloud/terraform/examples/existing-cognito`.
+
+### Content-Security-Policy in your app
+
+With `create_web_hosting = false` the module's CSP doesn't apply: your app serves the dashboard, so your CSP must
+allow what it needs. Merge these into your policy:
+
+```
+connect-src  'self' <api_url output> https://<your Cognito domain>   # Cognito only with the built-in login (token calls)
+style-src    'self' 'unsafe-inline'       # the dashboard sets colours and sizes with inline styles
+img-src      'self' data:
+```
+
+The module-hosted dashboard sends `frame-ancestors 'none'`, so it can't be shown in an `<iframe>`. Mount
+`<HomeloftDashboard>` in your app instead ([web/README.md](../web/README.md#embedding-the-dashboard)).
 
 ## 3. Call the HTTP API from any app
 
