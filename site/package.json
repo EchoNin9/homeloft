@@ -1,0 +1,15 @@
+{
+  "name": "homeloft-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync": "node sync-docs.mjs",
+    "dev": "node sync-docs.mjs && astro dev",
+    "build": "node sync-docs.mjs && astro build",
+    "test": "node sync-docs.test.mjs"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.42.8",
+    "astro": "7.4.4"
+  }
+}

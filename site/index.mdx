@@ -1,0 +1,37 @@
+---
+title: Homeloft
+description: Home Assistant on your Synology, with your own cloud dashboard and API on AWS.
+template: splash
+hero:
+  tagline: Home Assistant on your Synology, with your own cloud dashboard and API on AWS. No open ports, no subscription, about US$1–3 a month.
+  image:
+    file: ./assets/dashboard.png
+  actions:
+    - text: Quickstart
+      link: /quickstart/
+      icon: right-arrow
+    - text: Try the demo
+      link: /demo/
+      variant: secondary
+    - text: GitHub
+      link: https://github.com/EchoNin9/homeloft
+      variant: minimal
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid>
+  <Card title="Local first" icon="star">
+    Home Assistant runs on your NAS in Docker. Automations keep working when the internet doesn't.
+  </Card>
+  <Card title="No open ports" icon="approve-check">
+    A small bridge connects *outbound* to AWS IoT Core over mutual TLS. No port forwarding, no tunnel.
+  </Card>
+  <Card title="Your cloud, as code" icon="setting">
+    One OpenTofu module (Terraform works too): HTTP API, Cognito sign-in with MFA, DynamoDB history and an optional dashboard on CloudFront.
+  </Card>
+  <Card title="Built to embed" icon="puzzle">
+    Drop the module into an existing stack, mount the React dashboard in your app, or call the API.
+  </Card>
+</CardGrid>

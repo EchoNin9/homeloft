@@ -176,28 +176,7 @@ HA keeps a removed container's last state until HA restarts, so a deleted contai
 
 ## 10. Upgrading
 
-The `wud` service (What's Up Docker) checks every container's image daily at 06:00. When a newer image
-exists, the dashboard shows an amber update badge (and a count on **Updates** in the sidebar). Clicking
-either shows the commands to run. It only notifies: nothing in the cloud can upgrade the NAS.
-
-Setup, once:
-1. Add an MQTT user for it. Put the password in `.env` as `WUD_MQTT_PASSWORD`, then run
-   `sudo docker run --rm -v /volume1/docker/homeloft/mosquitto/passwd:/p eclipse-mosquitto:2 mosquitto_passwd -b /p wud "$PW"`
-   and `sudo docker kill -s HUP homeloft-mosquitto-1`.
-2. Set `WUD_ADMIN_PASSWORD` in `.env`. WUD 9 won't start without one, even though its UI is off.
-3. `sudo mkdir -p /volume1/docker/homeloft/wud && sudo docker compose up -d wud`.
-4. Add `update` to `BRIDGE_ALLOWED_DOMAINS`, and `sensor.wud_*,binary_sensor.wud_*` to
-   `BRIDGE_ENTITY_EXCLUDE`. Then run `sudo docker compose up -d bridge`.
-
-Upgrading, from the stack folder (take a backup first: `sudo docker compose exec backup bash /backup.sh`):
-
-| The update says | Do |
-|---|---|
-| `<svc> · new :<tag>` (same tag, new image) | `sudo docker compose pull <svc> && sudo docker compose up -d <svc>` |
-| `<svc> <old> → <new>` | Change the image tag in `docker-compose.yml` (and in the repo), then `sudo docker compose up -d <svc>` |
-| bridge | Not checked. Copy the new `nas/bridge`, then `sudo docker compose build bridge && sudo docker compose up -d bridge` |
-
-Then `sudo docker image prune -f`. To roll back, put the old tag back, and restore the backup if the config changed.
+See [Upgrading](upgrading.md).
 
 ## Synology gotchas
 
@@ -241,19 +220,4 @@ Each of these has broken this stack at least once. Add new ones here when you hi
 
 ## Troubleshooting
 
-| Symptom | Check |
-|---|---|
-| `bridge` exits immediately with `invalid configuration` | The message lists every bad/missing variable and missing cert file. |
-| `Home Assistant rejected the access token` | Token revoked or mistyped; recreate it. Recreate the container after editing `.env`. |
-| Bridge can't reach `127.0.0.1:8123` | HA must run with `network_mode: host`; check HA is up and `HA_URL` has the right port. |
-| IoT connect loops with TLS / `not authorized` | Thing name must equal the MQTT client id; cert must be attached to the Thing and an active policy; use the account's `-ats` endpoint with `AmazonRootCA1.pem`. Clock drift also breaks TLS: enable NTP in DSM. |
-| `PermissionError` reading `private.key` | `chown 10001` on the certs folder and key (step 2). |
-| Commands come back `not_allowed` | The service is not in `BRIDGE_ALLOWED_SERVICES`, or the entity is excluded / outside the allowed domains. |
-| Commands come back `stale` | NAS clock skew over 60 s (or 10 s ahead of the cloud). Fix NTP. |
-| Mosquitto exits | Missing or wrongly-owned `passwd` file (step 3), see `docker logs`. |
-| Mosquitto logs `Error saving in-memory database ... Permission denied` | `mosquitto/data` not writable by UID 1883 (see Synology gotchas). |
-| `sudo: docker: command not found` | Use `/usr/local/bin/docker` (see Synology gotchas). |
-| **Service down** badge for a container that no longer exists | HA and the cloud both keep the last state of a removed container. Restart HA and delete the cloud item (see §9). |
-| Container sensors or update tiles show `unavailable` after a recreate | WUD re-adds recreated containers on its next scan (06:00), or `docker compose restart wud`. |
-| Zigbee device not found | `ls /dev/tty*` on the NAS; driver not loaded (step 6); container needs the device path in `.env`. |
-| Ports 8123 / 1883 busy | Another package uses them; Home Assistant on host networking cannot change port without editing HA's `http:` config. |
+See [Troubleshooting](troubleshooting.md#on-the-nas).
