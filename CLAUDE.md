@@ -14,6 +14,8 @@ they are on the honour system, so follow them exactly.
   and merge once CI is green. Promote by opening a PR from `develop` into `main`, and only
   when a human asks.
 - Never force-push `main` or `develop`.
+- **Releases** are `vX.Y.Z` tags on `main` commits only, made after a promotion and only when a
+  human asks (docs/releasing.md). Never move or delete a published tag without asking.
 
 ## Contract first
 
