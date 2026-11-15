@@ -1,4 +1,4 @@
-import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { IncomingMessage } from 'node:http';
 import type { Plugin } from 'vite';
 import { kelvinToRgb } from '../src/components/color';
 
@@ -17,8 +17,14 @@ const e = (entity_id: string, state: string, attributes: Record<string, unknown>
   last_changed: now(),
 });
 
-/** Dev-only fake of the homeloft HTTP API (docs/contract.md). Run with `npm run dev:mock`. */
-export function mockApiPlugin(): Plugin {
+type Reply = { status: number; body: unknown };
+
+/**
+ * In-memory fake of the homeloft HTTP API (docs/contract.md). No Node or DOM imports, so it runs in the
+ * Vite dev server (`npm run dev:mock`) and in the browser (the static demo, `npm run build:demo`).
+ * Returns null for paths it doesn't own.
+ */
+export function createMockApi() {
   const homes: Record<string, { online: boolean; lastSeenTs: number; entities: Map<string, E> }> = {
     'main-house': {
       online: true,
@@ -63,18 +69,8 @@ export function mockApiPlugin(): Plugin {
   const commands = new Map<string, { status: 'pending' | 'ok' | 'error'; error: string | null }>();
   let seq = 0;
 
-  const send = (res: ServerResponse, status: number, body: unknown) => {
-    res.statusCode = status;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(body));
-  };
+  const send = (status: number, body: unknown): Reply => ({ status, body });
   const prefsStore: Record<string, { prefs: unknown; updatedTs: number }> = {};
-  const readBody = (req: IncomingMessage) =>
-    new Promise<string>((resolve) => {
-      let b = '';
-      req.on('data', (c) => (b += c));
-      req.on('end', () => resolve(b));
-    });
 
   function apply(home: (typeof homes)[string], cmd: any): string | null {
     const id = Array.isArray(cmd.target?.entity_id) ? cmd.target.entity_id[0] : cmd.target?.entity_id;
@@ -98,88 +94,106 @@ export function mockApiPlugin(): Plugin {
     return null;
   }
 
+  return async function handle(method: string, url: URL, readBody: () => Promise<string>): Promise<Reply | null> {
+    const p = url.pathname;
+    if (p.endsWith('/config.json')) return send(200, { apiUrl: '', mock: true });
+    if (!p.startsWith('/v1/')) return null;
+    await new Promise((r) => setTimeout(r, 120)); // feel like a network
+    let m: RegExpMatchArray | null;
+    if (p === '/v1/health') return send(200, { ok: true, version: 'mock' });
+    if (p === '/v1/homes') {
+      homes['main-house']!.lastSeenTs = Date.now();
+      return send(200, { homes: Object.entries(homes).map(([homeId, h]) => ({ homeId, online: h.online, lastSeenTs: h.lastSeenTs })) });
+    }
+    if ((m = p.match(/^\/v1\/homes\/([^/]+)\/entities$/))) {
+      const h = homes[decodeURIComponent(m[1]!)];
+      if (!h) return send(404, { error: 'not_found', message: 'no such home' });
+      const jitter = (x: E) =>
+        x.entity_id === 'sensor.power_usage' ? { ...x, state: String(380 + Math.round(Math.random() * 80)) } : x;
+      let list = [...h.entities.values()].map(jitter);
+      const d = url.searchParams.get('domain');
+      if (d) list = list.filter((x) => x.entity_id.startsWith(d + '.'));
+      return send(200, { entities: list, updatedTs: Date.now(), historyEntities: ['sensor.*_drive_*_temperature', 'light.*', 'sun.sun', 'binary_sensor.*door*'] });
+    }
+    if ((m = p.match(/^\/v1\/homes\/([^/]+)\/history\/([^/]+)$/))) {
+      // Synthetic history. light.porch, binary_sensor.front_door and anything with "2" in the id are empty (first-deploy case).
+      const id = decodeURIComponent(m[2]!);
+      const res2 = url.searchParams.get('res') ?? 'raw';
+      const to = Number(url.searchParams.get('to') ?? Date.now());
+      const from = Number(url.searchParams.get('from') ?? to - 86_400_000);
+      const empty = /porch|front_door|2/.test(id);
+      const numeric = id.startsWith('sensor.');
+      const H = 3_600_000;
+      const base = { entityId: id, res: res2, from, to, prev: null as unknown };
+      if (empty) return send(200, { ...base, points: [] });
+      if (res2 === 'day') {
+        const points = [];
+        for (let t = from; t <= to; t += 24 * H) {
+          const date = new Date(t).toISOString().slice(0, 10);
+          const k = Math.sin(t / (9e8));
+          points.push(numeric ? { date, min: 36 + 3 * k, max: 48 + 4 * k, avg: 42 + 3 * k, n: 40 } : { date, dur: id === 'sun.sun' ? { above_horizon: (12 + 3 * k) * 3600, below_horizon: (12 - 3 * k) * 3600 } : { on: (4 + 2 * k) * 3600, off: (20 - 2 * k) * 3600 }, n: 4 });
+        }
+        return send(200, { ...base, points: points.slice(-30 * 16) });
+      }
+      const step = numeric ? H / 2 : 3 * H;
+      const pts = [];
+      for (let t = from + step, i = 0; t < to; t += step, i++) pts.push({ t: new Date(t).toISOString(), state: numeric ? String(Math.round(40 + 6 * Math.sin(t / 2e7))) : i % 2 ? 'off' : 'on' });
+      return send(200, { ...base, prev: { t: new Date(from - H).toISOString(), state: numeric ? '41' : 'off' }, points: pts });
+    }
+    if ((m = p.match(/^\/v1\/homes\/([^/]+)\/entities\/([^/]+)$/))) {
+      const ent = homes[decodeURIComponent(m[1]!)]?.entities.get(decodeURIComponent(m[2]!));
+      return ent ? send(200, ent) : send(404, { error: 'not_found', message: 'no such entity' });
+    }
+    if ((m = p.match(/^\/v1\/homes\/([^/]+)\/prefs$/))) {
+      // ponytail: one in-memory user; restarting the dev server clears it.
+      const k = decodeURIComponent(m[1]!);
+      if (method === 'PUT') {
+        prefsStore[k] = { prefs: JSON.parse(await readBody()).prefs, updatedTs: Date.now() };
+        return send(200, { updatedTs: prefsStore[k].updatedTs });
+      }
+      return send(200, prefsStore[k] ?? { prefs: null, updatedTs: null });
+    }
+    if ((m = p.match(/^\/v1\/homes\/([^/]+)\/commands$/)) && method === 'POST') {
+      const h = homes[decodeURIComponent(m[1]!)];
+      if (!h) return send(404, { error: 'not_found', message: 'no such home' });
+      let cmd: any;
+      try {
+        cmd = JSON.parse(await readBody());
+      } catch {
+        return send(400, { error: 'bad_request', message: 'invalid JSON' });
+      }
+      const id = `c_mock${++seq}`;
+      commands.set(id, { status: 'pending', error: null });
+      setTimeout(() => commands.set(id, h.online ? (() => { const err = apply(h, cmd); return { status: err ? 'error' : 'ok', error: err } as const; })() : { status: 'error', error: 'ha_error: home offline' }), 700);
+      return send(202, { id, status: 'pending' });
+    }
+    if ((m = p.match(/^\/v1\/homes\/([^/]+)\/commands\/([^/]+)$/))) {
+      const c = commands.get(decodeURIComponent(m[2]!));
+      return c ? send(200, { id: decodeURIComponent(m[2]!), ...c }) : send(404, { error: 'not_found', message: 'no such command' });
+    }
+    return send(404, { error: 'not_found', message: 'no such route' });
+  };
+}
+
+const readReq = (req: IncomingMessage) =>
+  new Promise<string>((resolve) => {
+    let b = '';
+    req.on('data', (c) => (b += c));
+    req.on('end', () => resolve(b));
+  });
+
+/** Vite dev-server plugin for `npm run dev:mock`. */
+export function mockApiPlugin(): Plugin {
+  const handle = createMockApi();
   return {
     name: 'homeloft-mock-api',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        const url = new URL(req.url ?? '/', 'http://x');
-        const p = url.pathname;
-        if (p === '/config.json') return send(res, 200, { apiUrl: '', mock: true });
-        if (!p.startsWith('/v1/')) return next();
-        await new Promise((r) => setTimeout(r, 120)); // feel like a network
-        let m: RegExpMatchArray | null;
-        if (p === '/v1/health') return send(res, 200, { ok: true, version: 'mock' });
-        if (p === '/v1/homes') {
-          homes['main-house']!.lastSeenTs = Date.now();
-          return send(res, 200, { homes: Object.entries(homes).map(([homeId, h]) => ({ homeId, online: h.online, lastSeenTs: h.lastSeenTs })) });
-        }
-        if ((m = p.match(/^\/v1\/homes\/([^/]+)\/entities$/))) {
-          const h = homes[decodeURIComponent(m[1]!)];
-          if (!h) return send(res, 404, { error: 'not_found', message: 'no such home' });
-          const jitter = (x: E) =>
-            x.entity_id === 'sensor.power_usage' ? { ...x, state: String(380 + Math.round(Math.random() * 80)) } : x;
-          let list = [...h.entities.values()].map(jitter);
-          const d = url.searchParams.get('domain');
-          if (d) list = list.filter((x) => x.entity_id.startsWith(d + '.'));
-          return send(res, 200, { entities: list, updatedTs: Date.now(), historyEntities: ['sensor.*_drive_*_temperature', 'light.*', 'sun.sun', 'binary_sensor.*door*'] });
-        }
-        if ((m = p.match(/^\/v1\/homes\/([^/]+)\/history\/([^/]+)$/))) {
-          // Synthetic history. light.porch, binary_sensor.front_door and anything with "2" in the id are empty (first-deploy case).
-          const id = decodeURIComponent(m[2]!);
-          const res2 = url.searchParams.get('res') ?? 'raw';
-          const to = Number(url.searchParams.get('to') ?? Date.now());
-          const from = Number(url.searchParams.get('from') ?? to - 86_400_000);
-          const empty = /porch|front_door|2/.test(id);
-          const numeric = id.startsWith('sensor.');
-          const H = 3_600_000;
-          const base = { entityId: id, res: res2, from, to, prev: null as unknown };
-          if (empty) return send(res, 200, { ...base, points: [] });
-          if (res2 === 'day') {
-            const points = [];
-            for (let t = from; t <= to; t += 24 * H) {
-              const date = new Date(t).toISOString().slice(0, 10);
-              const k = Math.sin(t / (9e8));
-              points.push(numeric ? { date, min: 36 + 3 * k, max: 48 + 4 * k, avg: 42 + 3 * k, n: 40 } : { date, dur: id === 'sun.sun' ? { above_horizon: (12 + 3 * k) * 3600, below_horizon: (12 - 3 * k) * 3600 } : { on: (4 + 2 * k) * 3600, off: (20 - 2 * k) * 3600 }, n: 4 });
-            }
-            return send(res, 200, { ...base, points: points.slice(-30 * 16) });
-          }
-          const step = numeric ? H / 2 : 3 * H;
-          const pts = [];
-          for (let t = from + step, i = 0; t < to; t += step, i++) pts.push({ t: new Date(t).toISOString(), state: numeric ? String(Math.round(40 + 6 * Math.sin(t / 2e7))) : i % 2 ? 'off' : 'on' });
-          return send(res, 200, { ...base, prev: { t: new Date(from - H).toISOString(), state: numeric ? '41' : 'off' }, points: pts });
-        }
-        if ((m = p.match(/^\/v1\/homes\/([^/]+)\/entities\/([^/]+)$/))) {
-          const ent = homes[decodeURIComponent(m[1]!)]?.entities.get(decodeURIComponent(m[2]!));
-          return ent ? send(res, 200, ent) : send(res, 404, { error: 'not_found', message: 'no such entity' });
-        }
-        if ((m = p.match(/^\/v1\/homes\/([^/]+)\/prefs$/))) {
-          // ponytail: one in-memory user; restarting the dev server clears it.
-          const k = decodeURIComponent(m[1]!);
-          if (req.method === 'PUT') {
-            prefsStore[k] = { prefs: JSON.parse(await readBody(req)).prefs, updatedTs: Date.now() };
-            return send(res, 200, { updatedTs: prefsStore[k].updatedTs });
-          }
-          return send(res, 200, prefsStore[k] ?? { prefs: null, updatedTs: null });
-        }
-        if ((m = p.match(/^\/v1\/homes\/([^/]+)\/commands$/)) && req.method === 'POST') {
-          const h = homes[decodeURIComponent(m[1]!)];
-          if (!h) return send(res, 404, { error: 'not_found', message: 'no such home' });
-          let cmd: any;
-          try {
-            cmd = JSON.parse(await readBody(req));
-          } catch {
-            return send(res, 400, { error: 'bad_request', message: 'invalid JSON' });
-          }
-          const id = `c_mock${++seq}`;
-          commands.set(id, { status: 'pending', error: null });
-          setTimeout(() => commands.set(id, h.online ? (() => { const err = apply(h, cmd); return { status: err ? 'error' : 'ok', error: err } as const; })() : { status: 'error', error: 'ha_error: home offline' }), 700);
-          return send(res, 202, { id, status: 'pending' });
-        }
-        if ((m = p.match(/^\/v1\/homes\/([^/]+)\/commands\/([^/]+)$/))) {
-          const c = commands.get(decodeURIComponent(m[2]!));
-          return c ? send(res, 200, { id: decodeURIComponent(m[2]!), ...c }) : send(res, 404, { error: 'not_found', message: 'no such command' });
-        }
-        return send(res, 404, { error: 'not_found', message: 'no such route' });
+        const r = await handle(req.method ?? 'GET', new URL(req.url ?? '/', 'http://x'), () => readReq(req));
+        if (!r) return next();
+        res.statusCode = r.status;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(r.body));
       });
     },
   };

@@ -1,0 +1,11 @@
+/* Homeloft teal (web/index.html theme-color). */
+:root {
+  --sl-color-accent-low: #0b2f36;
+  --sl-color-accent: #0c7385;
+  --sl-color-accent-high: #b4e6ee;
+}
+:root[data-theme='light'] {
+  --sl-color-accent-low: #cdeff4;
+  --sl-color-accent: #0c7385;
+  --sl-color-accent-high: #063c46;
+}

@@ -72,7 +72,7 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md).
 - **Home Assistant runs with host networking, and it and Zigbee2MQTT run as root.** That is
   upstream's supported layout. Keep HA's own auth on and its port off the internet.
 - **Updates are notify-only.** You still have to apply them; see
-  [synology.md](synology.md#10-upgrading).
+  [upgrading.md](upgrading.md).
 
 ## If something leaks
 

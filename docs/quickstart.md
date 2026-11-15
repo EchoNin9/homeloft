@@ -296,23 +296,7 @@ keyed by `HMAC(PREFS_HMAC_KEY, sub)`, so they have to be re-keyed for the new us
 
 ## Troubleshooting
 
-| Symptom | Usual cause | Fix |
-|---|---|---|
-| `tofu init`: `Unsupported argument "use_lockfile"` | OpenTofu or Terraform older than 1.10 | Upgrade, or replace `use_lockfile` with a DynamoDB `dynamodb_table` |
-| Sign-in page shows an error instead of the form | The domain is on managed login, but the app client has no style | Re-run `tofu apply`; the branding resource creates the style. Or set `cognito_branding = false` |
-| `tofu apply`: Cognito domain already exists | The hosted UI prefix is globally unique per region | Set `cognito_domain_prefix` in the module call |
-| Bridge: TLS or connection refused to IoT | Client id isn't the thing name, wrong endpoint, or wrong file permissions | Check `IOT_THING_NAME` and `IOT_ENDPOINT`; certificates must be readable by UID 10001 |
-| Bridge: connects, then drops every few seconds | Two bridges using the same client id | Run only one bridge per home |
-| Bridge: `auth_invalid` from HA | Token pasted with whitespace, or revoked | Create a new long-lived token |
-| `snapshot sent: 0 entities` | Domain filter excludes everything, or HA was still loading when the bridge connected | Check `BRIDGE_ALLOWED_DOMAINS` and `BRIDGE_ENTITY_EXCLUDE`; otherwise restart the bridge |
-| `compose up`: `Pool overlaps with other one on this address space` | An older project's AdGuard macvlan network still exists | Stop that project with its profiles (`--profile adguard down`), or `docker network rm` the old network |
-| `compose up`: `Bind mount failed: …/wud does not exist` | The `wud` data folder wasn't created | `sudo mkdir -p /volume1/docker/homeloft/wud` |
-| META `online` missing | The IoT rule isn't firing | CloudWatch log group of the topic rule error action, and the ingest Lambda logs |
-| Login: `redirect_mismatch` | The web URL isn't in the client's callback URLs | Re-apply; custom domains go in `web_callback_urls` |
-| UI shows 403 | User isn't in the `admin` group, or a stale token from before the group was added | Add to the group, then sign out and back in |
-| UI shows CORS error | API called from an origin the module doesn't know | Add the origin to `web_callback_urls` |
-| Toggle reverts, toast says `stale` | NAS clock is off by more than 60 s | DSM → Regional Options → NTP |
-| Toggle reverts, toast says `not_allowed` | Service isn't in `allowed_services` (API) or `BRIDGE_ALLOWED_SERVICES` (bridge) | Add it to both |
+See [Troubleshooting](troubleshooting.md).
 
 ## Teardown
 
