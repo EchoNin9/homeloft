@@ -5,9 +5,14 @@ All notable changes to Homeloft. Versions follow [SemVer](https://semver.org); e
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-15
+
+Frontend platform upgrade. No contract, API, cloud or bridge behaviour changes.
+
 - **Web:** React 19.3 and TypeScript 7 (the native compiler). No code changes were needed; the dashboard was checked by hand
   (toggles, brightness, colour, thermostat, history, search, failing-command rollback) with a clean console under StrictMode.
   The bundle is about 23 kB larger gzipped (React 19). Embedding hosts on React 18 still work.
+- **Upgrading:** the bridge only changes its version string. Redeploy the cloud (which republishes the web app); rebuilding the bridge is optional.
 
 ## [0.1.2] - 2026-11-15
 
