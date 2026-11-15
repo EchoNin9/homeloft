@@ -28,13 +28,19 @@ curl -s "$(cd cloud/terraform/examples/standalone && tofu output -raw api_url)/v
 If you use the module from your own stack, change the `?ref=vX.Y.Z` in its `source` instead. With the
 [GitHub deploy workflow](quickstart.md#9-auto-deploy-from-github-optional), merging the new version to `main` does the same.
 
-**Bridge**, on the NAS: copy the new `nas/bridge` folder (and `nas/docker-compose.yml`, if the release
-notes say it changed) into the stack folder, then:
+**NAS**, from the stack folder: copy the new `nas/bridge` folder and `nas/docker-compose.yml` into it. Copy them
+as the user that owns the folder, or with `sudo` and then `chown` the files back, because `tar` and `cp` can't replace
+files owned by another DSM user. Then build the bridge and start what changed:
 
 ```sh
-sudo docker compose build bridge && sudo docker compose up -d bridge
+sudo DOCKER_BUILDKIT=0 docker build -t homeloft-bridge:X.Y.Z bridge   # legacy builder: DSM has no seccomp for BuildKit
+sudo docker compose pull --ignore-pull-failures                      # the bridge image is local, so its pull "fails"
+sudo docker compose up -d                                            # add --profile adguard / zigbee if you use them
 sudo docker compose logs --tail 20 bridge    # connected to Home Assistant, connected to IoT Core, snapshot sent
 ```
+
+On a non-Synology host, `sudo docker compose build bridge` works instead of the legacy build. If `snapshot sent`
+shows only a handful of entities, Home Assistant was still starting: `sudo docker compose restart bridge`.
 
 ## Third-party containers
 
