@@ -12,7 +12,7 @@ Requirements: DSM 7.2+, **Container Manager** (Package Center), an x86_64 or arm
 ## 1. Folders
 
 ```sh
-sudo mkdir -p /volume1/docker/homeloft/{homeassistant,mosquitto/data,zigbee2mqtt,bridge/certs,backups}
+sudo mkdir -p /volume1/docker/homeloft/{homeassistant,mosquitto/data,zigbee2mqtt,bridge/certs,backups,wud}
 ```
 
 Copy the contents of the repo's `nas/` directory (compose file, `bridge/`, `mosquitto/`, `scripts/`,
