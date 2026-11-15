@@ -5,6 +5,21 @@ All notable changes to Homeloft. Versions follow [SemVer](https://semver.org); e
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-15
+
+Maintenance release: docs site, live demo and dependency updates. No contract or API changes.
+
+- **Docs:** house-style README, new Architecture, Configuration, Upgrading and Troubleshooting pages,
+  CONTRIBUTING and Code of Conduct. Published at [homeloft.dev](https://homeloft.dev) (Starlight, from `docs/`).
+- **Demo:** `npm run build:demo` builds the dashboard with an in-browser fake API, live at
+  [homeloft.dev/demo](https://homeloft.dev/demo/).
+- **Bridge:** Python 3.15 base image; paho-mqtt 2.2.0, websockets 17.4. Rebuild the bridge on the NAS
+  ([Upgrading](docs/upgrading.md)).
+- **NAS images:** AdGuard Home v0.107.80, Zigbee2MQTT 2.14.3, WUD 9.8.0, docker-socket-proxy v0.5.0
+  (`POST=0` still blocks every non-GET request, including the new pause/unpause endpoints).
+- **CI:** Actions bumped (still pinned to commit SHAs; the CodeQL pin now points at the commit, not the tag
+  object), bridge tests on Python 3.15, branch rulesets require the `site` and `secrets` checks too.
+
 ## [0.1.0] - 2026-11-14
 
 First tagged release, after the rename from the project's earlier working name to Homeloft.

@@ -27,7 +27,7 @@ services:
 
   zigbee2mqtt:
     profiles: [zigbee]   # enable with: docker compose --profile zigbee up -d
-    image: koenkk/zigbee2mqtt:2.14.2
+    image: koenkk/zigbee2mqtt:2.14.3
     depends_on: [mosquitto]
     environment:
       TZ: ${TZ:-UTC}
@@ -39,7 +39,7 @@ services:
 
   bridge:
     build: ./bridge
-    image: homeloft-bridge:0.1.0
+    image: homeloft-bridge:0.1.1
     labels: [wud.watch=false]   # built locally from this repo; nothing to check
     network_mode: host   # reaches Home Assistant at 127.0.0.1:8123
     environment:
@@ -67,7 +67,7 @@ services:
   # spare NIC (ADGUARD_PARENT), so AdGuard can still forward the local zone to DSM DNS on the main one.
   adguard:
     profiles: [adguard]   # enable with: docker compose --profile adguard up -d
-    image: adguard/adguardhome:v0.107.79
+    image: adguard/adguardhome:v0.107.80
     networks:
       lan:
         ipv4_address: ${ADGUARD_IP:-}
@@ -82,7 +82,7 @@ services:
   # ponytail: with CONTAINERS=1 a GET can still read container logs/exports; both clients are fixed
   # images we run on purpose. Upstream: github.com/Tecnativa/docker-socket-proxy.
   socket-proxy:
-    image: tecnativa/docker-socket-proxy:v0.4.1
+    image: tecnativa/docker-socket-proxy:v0.5.0
     environment:
       CONTAINERS: 1
       IMAGES: 1
@@ -117,7 +117,7 @@ services:
   # Notify only: no update trigger is configured and its web UI/API is off, so nothing here can
   # change a container. Upgrade by hand (docs/synology.md "Upgrading").
   wud:
-    image: getwud/wud:9.6.0
+    image: getwud/wud:9.8.0
     network_mode: host   # reaches Mosquitto at 127.0.0.1:1883
     environment:
       TZ: ${TZ:-UTC}

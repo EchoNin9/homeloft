@@ -9,7 +9,7 @@
 set -euo pipefail
 repo="${1:?usage: $0 owner/repo}"
 
-ci_checks='{"context":"bridge"},{"context":"cloud"},{"context":"web"},{"context":"compose"}'
+ci_checks='{"context":"bridge"},{"context":"cloud"},{"context":"web"},{"context":"compose"},{"context":"site"},{"context":"secrets"}'
 
 ruleset() { # name branch extra_checks
   cat <<JSON
