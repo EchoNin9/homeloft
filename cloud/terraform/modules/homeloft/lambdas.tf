@@ -160,7 +160,7 @@ resource "aws_lambda_function" "api" {
       HISTORY_ENTITIES         = join(",", var.history_entities)
       HISTORY_UTC_OFFSET_HOURS = tostring(var.history_utc_offset_hours)
       IOT_ENDPOINT             = data.aws_iot_endpoint.this.endpoint_address
-      API_VERSION              = "0.1.0"
+      API_VERSION              = "0.1.1"
       PREFS_HMAC_KEY           = random_password.prefs_hmac.result
     }
   }

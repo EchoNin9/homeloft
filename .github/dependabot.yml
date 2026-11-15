@@ -7,6 +7,10 @@ updates:
     schedule: { interval: weekly, day: monday }
     groups:
       minor-and-patch: { update-types: [minor, patch] }
+    ignore:
+      # Match the Node version CI and the build run on (22); bump together with node-version.
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: pip
     directories: [/nas/bridge, /cloud]
