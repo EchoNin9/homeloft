@@ -27,7 +27,7 @@ services:
 
   zigbee2mqtt:
     profiles: [zigbee]   # enable with: docker compose --profile zigbee up -d
-    image: koenkk/zigbee2mqtt:2.14.2
+    image: koenkk/zigbee2mqtt:2.14.3
     depends_on: [mosquitto]
     environment:
       TZ: ${TZ:-UTC}
