@@ -82,7 +82,7 @@ services:
   # ponytail: with CONTAINERS=1 a GET can still read container logs/exports; both clients are fixed
   # images we run on purpose. Upstream: github.com/Tecnativa/docker-socket-proxy.
   socket-proxy:
-    image: tecnativa/docker-socket-proxy:v0.5.0
+    image: tecnativa/docker-socket-proxy:3.4
     environment:
       CONTAINERS: 1
       IMAGES: 1
