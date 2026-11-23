@@ -67,7 +67,7 @@ services:
   # spare NIC (ADGUARD_PARENT), so AdGuard can still forward the local zone to DSM DNS on the main one.
   adguard:
     profiles: [adguard]   # enable with: docker compose --profile adguard up -d
-    image: adguard/adguardhome:v0.107.80
+    image: adguard/adguardhome:v1.0.0
     networks:
       lan:
         ipv4_address: ${ADGUARD_IP:-}
